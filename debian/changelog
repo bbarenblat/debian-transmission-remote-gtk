@@ -1,0 +1,5 @@
+transmission-remote-gtk (1.1.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #630789)
+
+ -- Benjamin Barenblat <bbaren@mit.edu>  Sun, 14 Jul 2013 17:18:53 -0700

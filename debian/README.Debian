@@ -1,0 +1,6 @@
+transmission-remote-gtk for Debian
+----------------------------------
+
+Upstream ships a debian directory; I’ve replaced it with my own.
+
+ -- Benjamin Barenblat <bbaren@mit.edu>, Sun, 14 Jul 2013 20:58:26 -0700
