@@ -1,3 +1,14 @@
+transmission-remote-gtk (1.1.1-2) unstable; urgency=low
+
+  * Update Standards-Version.
+  * Update Vcs-* URLs.
+  * Enable verbose builds so the build log checker can check it.
+  * Import upstream patch to have 'make test' work again.
+  * Import upstream patch to add keywords to .desktop file (fixes a
+    Lintian warning).
+
+ -- Benjamin Barenblat <bbaren@mit.edu>  Tue, 25 Nov 2014 17:58:21 -0500
+
 transmission-remote-gtk (1.1.1-1) unstable; urgency=low
 
   * Initial release (Closes: #630789).  Upstream ships a debian
