@@ -15,7 +15,7 @@ Build-Depends:
  libnotify-dev,
  libproxy-dev,
  libunique-dev
-Standards-Version: 3.9.4
+Standards-Version: 3.9.6
 Homepage: https://code.google.com/p/transmission-remote-gtk/
 Vcs-Git: git://benjamin.barenblat.name/git/debian-transmission-remote-gtk.git
 Vcs-Browser: http://benjamin.barenblat.name/git/?p=debian-transmission-remote-gtk.git
