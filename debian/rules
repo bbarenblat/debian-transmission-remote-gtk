@@ -16,8 +16,3 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 override_dh_auto_configure:
 	dh_auto_configure -- --disable-silent-rules
-
-override_dh_auto_test:
-	# Tests are broken in v1.1.1.  See upstream issue #233
-	# <https://code.google.com/p/transmission-remote-gtk/issues/detail?id=233>.
-	/bin/true

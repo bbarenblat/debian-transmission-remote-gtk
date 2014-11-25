@@ -1,0 +1,13 @@
+Description: Update POTFILES.in
+Origin: upstream, https://code.google.com/p/transmission-remote-gtk/source/detail?r=317e075ed232519c491d34220735614c257b4587
+Bug: https://code.google.com/p/transmission-remote-gtk/issues/detail?id=233
+--- a/po/POTFILES.in
++++ b/po/POTFILES.in
+@@ -6,6 +6,7 @@ src/remote-exec.c
+ src/requests.c
+ src/session-get.c
+ src/torrent.c
++src/torrent-cell-renderer.c
+ src/trg-about-window.c
+ src/trg-cell-renderer-epoch.c
+ src/trg-cell-renderer-eta.c
