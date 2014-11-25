@@ -1,0 +1,15 @@
+Description: Add Keywords entry to .desktop file
+ This patch squashes three upstream commits into one.  The Origin header in this
+ patch references the first commit; the others are
+ https://code.google.com/p/transmission-remote-gtk/source/detail?r=2481b17214e72530d19ff654258e0ee5d541c0a6
+ and
+ https://code.google.com/p/transmission-remote-gtk/source/detail?r=98eb06aaeb6ee3d1f1440c3000311e73367778d7.
+Origin: upstream, https://code.google.com/p/transmission-remote-gtk/source/detail?r=9044e0971b9186cd7697988527090e4ee1f1e046
+Bug: https://code.google.com/p/transmission-remote-gtk/issues/detail?id=234
+--- a/src/transmission-remote-gtk.desktop.in
++++ b/src/transmission-remote-gtk.desktop.in
+@@ -8,3 +8,4 @@ TryExec=transmission-remote-gtk
+ Type=Application
+ MimeType=application/x-bittorrent;x-scheme-handler/magnet;
+ Categories=Network;FileTransfer;P2P;GTK;
++Keywords=p2p;bittorrent;transmission;rpc;
