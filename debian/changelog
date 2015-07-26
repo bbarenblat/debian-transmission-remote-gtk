@@ -1,4 +1,4 @@
-transmission-remote-gtk (1.1.1-2) unstable; urgency=low
+transmission-remote-gtk (1.1.1-2) sid; urgency=low
 
   * Update Standards-Version.
   * Update Vcs-* URLs.
