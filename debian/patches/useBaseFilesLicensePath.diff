@@ -1,0 +1,15 @@
+Description: Use correct path for GPL
+Bug-Debian: https://bugs.debian.org/791553
+Forwarded: not-needed
+Author: Benjamin Barenblat <bbaren@mit.edu>
+--- a/configure.ac
++++ b/configure.ac
+@@ -52,7 +52,7 @@ AM_CONDITIONAL([WIN32], test "$WIN32" =
+ CFLAGS="$CFLAGS -IC:/MinGW/msys/1.0/include"
+ #endif
+ 
+-trglicense='${docdir}-$(PACKAGE_VERSION)/COPYING'
++trglicense='/usr/share/common-licenses/GPL-2'
+ AC_SUBST(trglicense)
+ GETTEXT_PACKAGE=AC_PACKAGE_NAME
+ AC_SUBST(GETTEXT_PACKAGE)

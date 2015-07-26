@@ -102,7 +102,7 @@ License: FSF-GPL2
  of this license document, but changing it is not allowed.
 
 Files: debian/*
-Copyright: 2013, 2014 Benjamin Barenblat <bbaren@mit.edu>
+Copyright: 2013, 2014, 2015 Benjamin Barenblat <bbaren@mit.edu>
 License: GPL-2+
 
 Files: install-sh
