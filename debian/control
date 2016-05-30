@@ -6,7 +6,6 @@ Build-Depends:
  debhelper (>= 9.0.0),
  dh-autoreconf,
  intltool (>= 0.35.0),
- libappindicator3-dev,
  libcurl4-gnutls-dev | libcurl-ssl-dev,
  libjson-glib-dev (>= 0.8),
  libgeoip-dev,
@@ -15,7 +14,7 @@ Build-Depends:
  libnotify-dev,
  libproxy-dev,
  libunique-dev
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Homepage: https://code.google.com/p/transmission-remote-gtk/
 Vcs-Git: git://benjamin.barenblat.name/debian-transmission-remote-gtk.git
 Vcs-Browser: https://benjamin.barenblat.name/gitweb/?p=debian-transmission-remote-gtk.git
