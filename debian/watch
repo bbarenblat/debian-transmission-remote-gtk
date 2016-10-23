@@ -1,3 +1,3 @@
 version=3
-http://code.google.com/p/transmission-remote-gtk/downloads/list?can=1 \
-  .*/transmission-remote-gtk-(\d[\d.]*)\.tar\.gz
+opts=filenamemangle=s/.+\/v?(\d\S+)\.tar\.gz/transmission-remote-gtk-$1\.tar\.gz/ \
+  https://github.com/transmission-remote-gtk/transmission-remote-gtk/tags .*/v?(\d\S+)\.tar\.gz
