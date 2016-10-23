@@ -1,0 +1,43 @@
+Subject: Don't touch rss-glib if RSS is disabled
+
+rss-glib is licensed under the LGPLv3 or later.  src/hig.c, src/hig.h,
+src/torrent-cell-renderer.c, and src/torrent-cell-renderer.h are licensed under
+the GPLv2 only.  Therefore, transmission-remote-gtk must be built without RSS to
+avoid a GPL violation.
+
+Disabling RSS with --without-libmrss should be enough to ensure this happens.
+In the interest of defence in depth, however, conditionalize references to
+rss-glib from within the build system.  As an added bonus, this speeds up build
+time by not building code which will never get linked.
+
+Author: Benjamin Barenblat <bbaren@mit.edu>
+Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/21
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -20,7 +20,10 @@
+ ACLOCAL_AMFLAGS = -I m4
+ AUTOMAKE_OPTIONS = foreign
+ DISTCHECK_CONFIGURE_FLAGS = --disable-desktop-database-update
+-SUBDIRS = extern src po data
++SUBDIRS = src po data
++if HAVE_RSS
++SUBDIRS += extern
++endif
+ 
+ DISTCLEANFILES = \
+ 	intltool-extract \
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -143,8 +143,10 @@
+ 	  icon-turtle.h
+ 
+ transmission_remote_gtk_CPPFLAGS = \
+-	-DLOCALEDIR=\""$(localedir)"\" \
+-	-I$(top_srcdir)/extern
++	-DLOCALEDIR=\""$(localedir)"\"
++if HAVE_RSS
++transmission_remote_gtk_CPPFLAGS += -I$(top_srcdir)/extern
++endif
+ 
+ transmission_remote_gtk_CFLAGS = \
+ 	$(TRG_CFLAGS) \
