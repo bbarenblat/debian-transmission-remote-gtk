@@ -9,8 +9,9 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 .PHONY: override_dh_autoreconf
 override_dh_autoreconf:
-	dh_autoreconf sh -- autogen.sh
+	dh_autoreconf /usr/bin/env -- NOCONFIGURE=1 ./autogen.sh
 
 .PHONY: override_dh_auto_configure
 override_dh_auto_configure:
-	dh_auto_configure -- --without-libappindicator --disable-silent-rules
+	dh_auto_configure -- --without-libappindicator --without-libmrss \
+		--disable-debug --disable-silent-rules
