@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
@@ -133,15 +137,14 @@ trg_status_bar_set_connected_label(TrgStatusBar * sb, JsonObject * session,
                                    TrgClient * client)
 {
     TrgPrefs *prefs = trg_client_get_prefs(client);
-    gdouble version = session_get_version(session);
 
     gchar *profileName = trg_prefs_get_string(prefs,
                                               TRG_PREFS_KEY_PROFILE_NAME,
                                               TRG_PREFS_CONNECTION);
     gchar *statusMsg =
-        g_strdup_printf(_("Connected: %s (Transmission %g)"),
+        g_strdup_printf(_("Connected: %s :: Transmission %s"),
                         profileName,
-                        version);
+                        session_get_version_string(session));
 
     trg_status_bar_push_connection_msg(sb, statusMsg);
 
@@ -200,19 +203,19 @@ trg_status_bar_update_speed(TrgStatusBar * sb,
     gchar downRateTotalString[32], upRateTotalString[32];
     gchar uplimit[64], downlimit[64];
 
-    if (session_get_speed_limit_down_enabled(session))
-        downlimitraw = session_get_speed_limit_down(session);
-    else if (altLimits)
+    if (altLimits) {
         downlimitraw = session_get_alt_speed_limit_down(session);
-    else
-        downlimitraw = -1;
-
-    if (session_get_speed_limit_up_enabled(session))
-        uplimitraw = session_get_speed_limit_up(session);
-    else if (altLimits)
         uplimitraw = session_get_alt_speed_limit_up(session);
-    else
-        uplimitraw = -1;
+    } else {
+        if (session_get_speed_limit_down_enabled(session))
+            downlimitraw = session_get_speed_limit_down(session);
+        else
+            downlimitraw = -1;
+        if (session_get_speed_limit_up_enabled(session))
+            uplimitraw = session_get_speed_limit_up(session);
+        else
+            uplimitraw = -1;
+    }
 
     trg_strlspeed(downRateTotalString, stats->downRateTotal / disk_K);
     trg_strlspeed(upRateTotalString, stats->upRateTotal / disk_K);

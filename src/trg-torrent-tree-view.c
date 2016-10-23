@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 
@@ -48,7 +52,7 @@ static void trg_torrent_tree_view_init(TrgTorrentTreeView * tttv)
     trg_column_description *desc;
 
     desc =
-        trg_tree_view_reg_column(ttv, TRG_COLTYPE_STOCKICONTEXT,
+        trg_tree_view_reg_column(ttv, TRG_COLTYPE_ICONTEXT,
                                  TORRENT_COLUMN_NAME, _("Name"), "name",
                                  0);
     desc->model_column_extra = TORRENT_COLUMN_ICON;
@@ -206,11 +210,7 @@ trg_torrent_tree_view_renderer_pref_changed(TrgPrefs * p,
             TRG_STYLE_TR_COMPACT;
         g_object_set(G_OBJECT(data), "compact", GINT_TO_POINTER(compact),
                      NULL);
-#if GTK_CHECK_VERSION( 3,0,0 )
         g_signal_emit_by_name(tv, "style-updated", NULL, NULL);
-#else
-        g_signal_emit_by_name(tv, "style-set", NULL, NULL);
-#endif
     }
 }
 

@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 
@@ -93,7 +97,7 @@ static gboolean on_files_update(gpointer data)
 
     response->cb_data = priv->win;
 
-    return on_generic_interactive_action(data);
+    return on_generic_interactive_action_response(data);
 }
 
 static void send_updated_file_prefs(TrgFilesTreeView * tv)

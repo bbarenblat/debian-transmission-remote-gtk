@@ -1,0 +1,10 @@
+[Desktop Entry]
+_Name=Transmission Remote
+_Comment=Remotely manage the Transmission BitTorrent client
+Exec=transmission-remote-gtk %U
+Icon=transmission-remote-gtk
+Terminal=false
+Type=Application
+MimeType=application/x-bittorrent;x-scheme-handler/magnet;
+Categories=Network;FileTransfer;P2P;GTK;
+Keywords=p2p;bittorrent;transmission;rpc;

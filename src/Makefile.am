@@ -17,35 +17,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-NULL =
-
-public_icons_themes = \
-        hicolor \
-        $(NULL)
-
-public_icons = \
-        hicolor_apps_scalable_transmission-remote-gtk.svg \
-	hicolor_apps_16x16_transmission-remote-gtk.png \
-	hicolor_apps_24x24_transmission-remote-gtk.png \
-	hicolor_apps_48x48_transmission-remote-gtk.png \
-	hicolor_apps_22x22_transmission-remote-gtk.png \
-	hicolor_apps_32x32_transmission-remote-gtk.png \
-        $(NULL)
-
-if !WIN32
-EXTRA_DIST = transmission-remote-gtk.desktop.in transmission-remote-gtk.pod
-CLEANFILES = transmission-remote-gtk.desktop transmission-remote-gtk.1
-
-man_MANS = transmission-remote-gtk.1
-
-desktopdir = $(datadir)/applications
-desktop_DATA = transmission-remote-gtk.desktop
-
-endif
-
 bin_PROGRAMS = transmission-remote-gtk
-INCLUDES = -std=c99 -Wall -I.. -Wno-overflow -DTRGLICENSE=\""$(trglicense)"\" $(libcurl_CFLAGS) $(jsonglib_CFLAGS) $(gthread_CFLAGS) $(gtk_CFLAGS) $(gio_CFLAGS) $(unique_CFLAGS) $(notify_CFLAGS) $(libproxy_CFLAGS) $(libappindicator_CFLAGS)
-		
+
 transmission_remote_gtk_SOURCES = \
 	  trg-cell-renderer-speed.c \
 	  trg-cell-renderer-counter.c \
@@ -105,9 +78,97 @@ transmission_remote_gtk_SOURCES = \
 	  trg-client.c \
 	  trg-main-window.c \
 	  main.c \
-	  $(NULL)
+	  upload.c
 
-transmission_remote_gtk_LDFLAGS = -lm $(jsonglib_LIBS) $(gtk_LIBS) $(gthread_LIBS) $(GEOIP_LIBS) $(gio_LIBS) $(unique_LIBS) $(notify_LIBS) $(libproxy_LIBS) $(libcurl_LIBS) $(libappindicator_LIBS)
+noinst_HEADERS = \
+	  trg-cell-renderer-speed.h \
+	  trg-cell-renderer-counter.h \
+	  trg-cell-renderer-size.h \
+	  trg-cell-renderer-ratio.h \
+	  trg-cell-renderer-eta.h \
+	  trg-cell-renderer-priority.h \
+	  trg-cell-renderer-wanted.h \
+	  trg-cell-renderer-file-icon.h \
+	  trg-cell-renderer-epoch.h \
+	  trg-cell-renderer-numgteqthan.h \
+	  torrent-cell-renderer.h \
+	  trg-remote-prefs-dialog.h \
+	  trg-torrent-props-dialog.h \
+	  trg-torrent-add-url-dialog.h \
+	  trg-torrent-add-dialog.h \
+	  trg-torrent-move-dialog.h \
+	  trg-preferences-dialog.h \
+	  trg-stats-dialog.h \
+	  trg-about-window.h \
+	  trg-destination-combo.h \
+	  trg-state-selector.h \
+	  trg-general-panel.h \
+	  trg-torrent-graph.h \
+	  trg-icons.h \
+	  icons.h \
+	  trg-toolbar.h \
+	  trg-menu-bar.h \
+	  trg-status-bar.h \
+	  trg-file-parser.h \
+	  trg-json-widgets.h \
+	  trg-model.h \
+	  trg-sortable-filtered-model.h \
+	  trg-files-tree.h \
+	  trg-files-model.h \
+	  trg-files-tree-view-common.h \
+	  trg-files-tree-view.h \
+	  trg-files-model-common.h \
+	  trg-trackers-model.h \
+	  trg-trackers-tree-view.h \
+	  trg-peers-model.h \
+	  trg-peers-tree-view.h \
+	  trg-torrent-model.h \
+	  trg-torrent-tree-view.h \
+	  trg-persistent-tree-view.h \
+	  trg-tree-view.h \
+	  util.h \
+	  hig.h \
+	  bencode.h \
+	  trg-prefs.h \
+	  remote-exec.h \
+	  trg-gtk-app.h \
+	  requests.h \
+	  torrent.h \
+	  session-get.h \
+	  json.h \
+	  trg-client.h \
+	  trg-main-window.h \
+	  upload.h \
+	  protocol-constants.h \
+	  icon-turtle.h
+
+transmission_remote_gtk_CPPFLAGS = \
+	-DLOCALEDIR=\""$(localedir)"\" \
+	-I$(top_srcdir)/extern
+
+transmission_remote_gtk_CFLAGS = \
+	$(TRG_CFLAGS) \
+	$(GEOIP_CFLAGS) \
+	$(NOTIFY_CFLAGS) \
+	$(MRSS_CFLAGS) \
+	$(APPINDICATOR_CFLAGS) \
+	$(PROXY_CFLAGS)
+
+transmission_remote_gtk_LDFLAGS = \
+	$(LIBM) \
+	$(TRG_LIBS) \
+	$(GEOIP_LIBS) \
+	$(NOTIFY_LIBS) \
+	$(PROXY_LIBS) \
+	$(APPINDICATOR_LIBS) \
+	$(MRSS_CFLAGS)
+
+if HAVE_RSS
+transmission_remote_gtk_LDFLAGS += ${top_builddir}/extern/rss-glib/librss.la
+
+transmission_remote_gtk_SOURCES += trg-rss-model.c trg-rss-window.c trg-rss-cell-renderer.c
+noinst_HEADERS += trg-rss-model.h trg-rss-window.h trg-rss-cell-renderer.h
+endif
 
 if WIN32
 .rc.o:
@@ -115,49 +176,16 @@ if WIN32
 %.o : %.rc
 	windres $^ -o $@
 
-CFLAGS += -mms-bitfields -mwin32 -mwindows
-LDFLAGS += -Wl,--allow-multiple-definition -lws2_32 -lintl
+transmission_remote_gtk_CFLAGS += -mms-bitfields -mwin32 -mwindows
+transmission_remote_gtk_LDFLAGS += -Wl,--allow-multiple-definition -lws2_32 -lintl
 transmission_remote_gtk_SOURCES += win32.rc win32-mailslot.c
-INCLUDES += -O2
 else
 %.1: %.pod
-	        pod2man --release="" --center="Transmission Remote GTK" $< > $@
+	        $(POD2MAN) --release="$(PACKAGE_VERSION)" --center="Transmission Remote GTK" $< > $@
+
+EXTRA_DIST = transmission-remote-gtk.pod
+CLEANFILES = transmission-remote-gtk.1
+
+man_MANS = transmission-remote-gtk.1
 endif
 
-install-data-local: install-icons update-icon-cache
-
-gtk_update_icon_cache = gtk-update-icon-cache -f -t
-
-update-icon-cache:
-	@-if test -z "$(DESTDIR)"; then \
-		echo "Updating Gtk icon cache."; \
-		for theme in $(public_icons_themes); do \
-			$(gtk_update_icon_cache) $(datadir)/icons/$$theme; \
-	done; \
-	else \
-		echo "*** Icon cache not updated.  After (un)install, run this:"; \
-		for theme in $(public_icons_themes); do \
-			echo "***   $(gtk_update_icon_cache) $(datadir)/icons/$$theme"; \
-		done; \
-	fi
-
-install-icons:
-	for icon in $(public_icons); do \
-                THEME=`echo $$icon | cut -d_ -f1`; \
-                CONTEXT=`echo $$icon | cut -d_ -f2`; \
-                SIZE=`echo $$icon | cut -d_ -f3`; \
-                ICONFILE=`echo $$icon | cut -d_ -f4`; \
-                mkdir -p $(DESTDIR)$(datadir)/icons/$$THEME/$$SIZE/$$CONTEXT; \
-                $(INSTALL_DATA) $(srcdir)/$$icon $(DESTDIR)$(datadir)/icons/$$THEME/$$SIZE/$$CONTEXT/$$ICONFILE; \
-        done; \
-        for icon in $(private_icons); do \
-                THEME=`echo $$icon | cut -d_ -f1`; \
-                CONTEXT=`echo $$icon | cut -d_ -f2`; \
-                SIZE=`echo $$icon | cut -d_ -f3`; \
-                ICONFILE=`echo $$icon | cut -d_ -f4`; \
-                mkdir -p $(DESTDIR)$(pkgdatadir)/icons/$$THEME/$$SIZE/$$CONTEXT; \
-                $(INSTALL_DATA) $(srcdir)/$$icon $(DESTDIR)$(pkgdatadir)/icons/$$THEME/$$SIZE/$$CONTEXT/$$ICONFILE; \
-        done
-
-transmission-remote-gtk.desktop: transmission-remote-gtk.desktop.in
-	sed -e 's,@bindir\@,$(bindir),g' <transmission-remote-gtk.desktop.in > $@

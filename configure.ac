@@ -17,28 +17,44 @@ dnl with this program; if not, write to the Free Software Foundation, Inc.,
 dnl 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 dnl
 
-AC_PREREQ(2.63)
+AC_PREREQ([2.69])
 
-AC_INIT(transmission-remote-gtk, 1.1.1, alan@eth0.org.uk)
-AC_CONFIG_SRCDIR(src)
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
-AM_INIT_AUTOMAKE([foreign])
+AC_INIT([transmission-remote-gtk], [1.3.1],
+        [https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues])
+AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
+AM_INIT_AUTOMAKE([1.12 tar-pax dist-xz no-dist-gzip subdir-objects no-define foreign -Wall -Wno-portability])
+AM_SILENT_RULES([yes])
+AM_MAINTAINER_MODE([enable])
+
+AC_DEFUN([TRG_CHECK_MACRO], [m4_ifndef([$1], [m4_fatal([macro ]$1[ is not defined. Is ]$2[ installed?])])])
+
+TRG_CHECK_MACRO([AX_IS_RELEASE], [autoconf-archive])
+TRG_CHECK_MACRO([APPSTREAM_XML], [appstream-glib])
+
+AX_IS_RELEASE([git-directory])
+AX_CHECK_ENABLE_DEBUG([yes], [G_ENABLE_DEBUG], [DEBUG G_DISABLE_ASSERT G_DISABLE_CHECKS G_DISABLE_CAST_CHECKS])
 
 AC_PROG_CC
-AM_PROG_CC_C_O
-
+AC_PROG_CC_C99
 AC_PROG_INSTALL
+AC_PATH_PROG([POD2MAN], [pod2man])
+
+LT_PREREQ([2.2.0])
 LT_INIT
-IT_PROG_INTLTOOL([0.35.0])
-PKG_PROG_PKG_CONFIG
+LT_LIB_M
+IT_PROG_INTLTOOL([0.50.1])
+PKG_PROG_PKG_CONFIG([0.28])
+DESKTOP_FILE
+APPSTREAM_XML
 
-AC_CHECK_HEADERS([stdlib.h string.h])
-AC_TYPE_SIZE_T
+GETTEXT_PACKAGE=AC_PACKAGE_NAME
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"], [Gettext package name])
 
+dnl ---- win32 ----
 case "${host_os}" in
         *mingw32*) WIN32="yes" ;;
         *cygwin*) WIN32="yes" ;;
@@ -46,89 +62,142 @@ case "${host_os}" in
         	CPPFLAGS="$CPPFLAGS -I/usr/local/include" ;;
         *) WIN32="no" ;;
 esac
-
 AM_CONDITIONAL([WIN32], test "$WIN32" = "yes")
-#if WIN32
-CFLAGS="$CFLAGS -IC:/MinGW/msys/1.0/include"
-#endif
 
-trglicense='${docdir}-$(PACKAGE_VERSION)/COPYING'
-AC_SUBST(trglicense)
-GETTEXT_PACKAGE=AC_PACKAGE_NAME
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE(GETTEXT_PACKAGE, "AC_PACKAGE_NAME", [foo])
-AC_DEFINE_DIR([LOCALEDIR], [datarootdir/locale], [gettext catalogs])
 
+dnl ---- required deps ----
+AC_DEFINE([GLIB_VERSION_MIN_REQUIRED], [GLIB_VERSION_2_44], [Dont warn using older APIs])
+AC_DEFINE([GLIB_VERSION_MAX_ALLOWED], [GLIB_VERSION_2_44], [Prevents using newer APIs])
+
+PKG_CHECK_MODULES([TRG], [
+	json-glib-1.0 >= 0.8
+	gthread-2.0
+	libcurl
+	gio-2.0 >= 2.44
+	gtk+-3.0 >= 3.16
+])
+
+
+dnl ---- optional deps ----
 AC_ARG_WITH([libgeoip], AC_HELP_STRING([--without-libgeoip], [disable GeoIP support]))
-have_libgeoip=no
-if test x$with_libgeoip != xno; then
-  AC_CHECK_HEADER([GeoIP.h],[have_geoip=yes],[have_geoip=no])
-fi
-if test "x$have_geoip" = "xyes"; then
-  AC_DEFINE(HAVE_GEOIP, 1, [GeoIP Support.])
-  GEOIP_LIBS="-lGeoIP"
-  AC_SUBST([GEOIP_LIBS])
-fi
+have_geoip=no
+AS_IF([test x$with_libgeoip != xno], [
+	PKG_CHECK_MODULES([GEOIP], [geoip], [
+		have_geoip="yes"
+	], [
+		AC_MSG_WARN([libgeoip not found])
+	])
+])
 AM_CONDITIONAL([HAVE_GEOIP], [test "x$have_geoip" = "xyes"])
 
-AC_ARG_WITH([libunique], AC_HELP_STRING([--without-libunique], [disable libunique]))
-have_libunique=no
+
 AC_ARG_WITH([libnotify], AC_HELP_STRING([--without-libnotify], [disable libnotify]))
 have_libnotify=no
+AS_IF([test x$with_libnotify != xno], [
+	PKG_CHECK_MODULES([NOTIFY], [libnotify], [
+		have_libnotify=yes
+		AC_DEFINE(HAVE_LIBNOTIFY, 1, [Define if libnotify is available])
+	], [
+		AC_MSG_WARN([libnotify is required for popup desktop notifications])
+	])
+])
+
+
+AC_ARG_WITH([libmrss], AC_HELP_STRING([--without-libmrss], [disable RSS support]))
+have_libmrss=no
+AS_IF([test x$with_libmrss != xno], [
+	PKG_CHECK_MODULES([MRSS], [mrss >= 0.18], [
+		have_libmrss="yes"
+		AC_DEFINE(HAVE_RSS, 1, [Define if RSS features available])
+	], [
+		AC_MSG_WARN([libmrss is required for RSS reader])
+	])
+])
+AM_CONDITIONAL([HAVE_RSS], [test x$have_libmrss == xyes ])
+
+
 AC_ARG_WITH([libproxy], AC_HELP_STRING([--without-libproxy], [disable libproxy]))
 have_libproxy=no
+AS_IF([test x$with_libproxy != xno], [
+	PKG_CHECK_MODULES([PROXY], [libproxy-1.0], [
+		have_libproxy=yes
+		AC_DEFINE(HAVE_LIBPROXY, 1, [Define if libproxy is available])
+	], [
+		AC_MSG_WARN([libproxy is required for HTTP proxy support])
+	])
+])
+
+
 AC_ARG_WITH([libappindicator], AC_HELP_STRING([--without-libappindicator], [disable libappindicator]))
 have_libappindicator=no
-
-if test x$with_libnotify != xno; then
-  PKG_CHECK_MODULES([notify], [libnotify], AC_DEFINE(HAVE_LIBNOTIFY, 1, [Define if libnotify is available]), AC_MSG_WARN([libnotify is required for popup desktop notifications]))
-fi
-
-if test x$with_libproxy != xno; then
-  PKG_CHECK_MODULES([libproxy], [libproxy-1.0], AC_DEFINE(HAVE_LIBPROXY, 1, [Define if libproxy is available]), AC_MSG_WARN([libproxy is required for HTTP proxy support]))
-fi
-
-AC_ARG_ENABLE(debug, [AS_HELP_STRING(--enable-debug,
-                                     [enable debugging])])
-if test x$enable_debug = xyes; then
-    AC_DEFINE([DEBUG], [],  [enable debugging])
-fi
-
-AC_ARG_ENABLE(gtk3, [AS_HELP_STRING(--enable-gtk3,
-                                     [use gtk3 support (now default, left for compatability)])])
-AC_ARG_ENABLE(gtk2, [AS_HELP_STRING(--enable-gtk2,
-                                     [use old gtk2 support])])
-
-PKG_CHECK_MODULES([jsonglib], [json-glib-1.0 >= 0.8])
-PKG_CHECK_MODULES([gthread], [gthread-2.0])
-
-AC_DEFUN([TRG_GTK3_CONFIGURE], [
-AC_MSG_NOTICE([attempting gtk-3.0 build])
-PKG_CHECK_MODULES([gtk], [gtk+-3.0 >= 3.00], [
-if test x$with_libappindicator != xno; then
-PKG_CHECK_MODULES([libappindicator], [appindicator3-0.1], AC_DEFINE(HAVE_LIBAPPINDICATOR, 1, [Define if libappindicator is available]), AC_MSG_WARN([Ubuntu Unity users should consider building with libappindicator]))
-fi
-], [$1])
+AS_IF([test x$with_libappindicator != xno], [
+	PKG_CHECK_MODULES([APPINDICATOR], [appindicator3-0.1], [
+		AC_DEFINE(HAVE_LIBAPPINDICATOR, 1, [Define if libappindicator is available])
+	], [
+		AC_MSG_WARN([Ubuntu Unity users should consider building with libappindicator])
+	])
 ])
 
-AC_DEFUN([TRG_GTK2_CONFIGURE], [
-AC_MSG_NOTICE([attempting gtk-2.0 build])
-PKG_CHECK_MODULES([gtk], [gtk+-2.0 >= 2.16])
-if test x$with_libappindicator != xno; then
-  PKG_CHECK_MODULES([libappindicator], [appindicator-0.1], AC_DEFINE(HAVE_LIBAPPINDICATOR, 1, [Define if libappindicator is available]), AC_MSG_WARN([Ubuntu Unity users should consider building with libappindicator]))
-fi
-if test x$with_libunique != xno; then
-  PKG_CHECK_MODULES([unique], [unique-1.0], AC_DEFINE(HAVE_LIBUNIQUE, 1, [Define if libunique is available]), AC_MSG_WARN([libunique is required for opening torrents on gtk+-2.0. not needed for gtk+-3.0 or win32. ]))
-fi
+
+dnl ---- build flags ----
+AX_APPEND_COMPILE_FLAGS([ \
+	-std=gnu99 \
+	-funsigned-char \
+	-fstack-protector-strong \
+	-fPIE \
+	-fPIC \
+	-Wall \
+	-Wextra \
+	-Winline \
+	-Wno-padded \
+	-Wno-unused-parameter \
+	-Wstrict-prototypes \
+	-Wmissing-prototypes \
+	-Werror=format=2 \
+	-Werror=implicit-function-declaration \
+	-Werror=pointer-arith \
+	-Werror=init-self \
+	-Werror=format-security \
+	-Werror=missing-include-dirs \
+	-Werror=date-time \
+	-Wno-conversion \
+	-Wno-sign-compare \
+	-Wno-deprecated-declarations \
+	-Wno-error=format-nonliteral \
+])
+dnl TODO: Fix last two hidden warnings
+
+AS_IF([test "$enable_debug" = "no"], [
+	AX_APPEND_COMPILE_FLAGS([-O2])
 ])
 
-if test x$enable_gtk2 = xyes; then
-  TRG_GTK2_CONFIGURE([])
-else
-  TRG_GTK3_CONFIGURE()
-fi
+AX_APPEND_LINK_FLAGS([ \
+	-pie \
+	-Wl,-z,relro \
+	-Wl,-z,now \
+])
 
-PKG_CHECK_MODULES([libcurl], [libcurl])
-PKG_CHECK_MODULES([gio], [gio-2.0 >= 2.22])
+AC_CONFIG_FILES([
+	Makefile
+	po/Makefile.in
+	src/Makefile
+	extern/Makefile
+	extern/rss-glib/Makefile
+	data/Makefile
+	data/icons/Makefile
+])
 
-AC_OUTPUT([Makefile po/Makefile.in src/Makefile])
+AC_OUTPUT
+
+echo "
+	$PACKAGE $VERSION
+
+	prefix ........: $prefix
+	debug .........: $enable_debug
+
+	geoip .........: $have_geoip
+	libnotify .....: $have_libnotify
+	libmrss .......: $have_libmrss
+	libproxy ......: $have_libproxy
+	libappindicator: $have_libappindicator
+"

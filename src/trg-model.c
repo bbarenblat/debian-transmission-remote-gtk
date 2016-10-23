@@ -17,9 +17,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
+#include "trg-model.h"
 
 /* An extension of GtkListStore which provides some functions for looking up
  * an entry by ID. Also for removing entries which have an old update serial,
@@ -32,7 +37,7 @@ struct trg_model_remove_removed_foreachfunc_args {
     GList *toRemove;
 };
 
-gboolean
+static gboolean
 trg_model_remove_removed_foreachfunc(GtkTreeModel * model,
                                      GtkTreePath * path G_GNUC_UNUSED,
                                      GtkTreeIter * iter, gpointer data)

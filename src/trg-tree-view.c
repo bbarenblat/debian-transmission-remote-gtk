@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
@@ -48,6 +52,12 @@
 enum {
     PROP_0, PROP_PREFS, PROP_CONFIGID
 };
+
+enum {
+	SIGNAL_COLUMN_ADDED, SIGNAL_COUNT
+};
+
+static guint signals[SIGNAL_COUNT] = { 0 };
 
 G_DEFINE_TYPE(TrgTreeView, trg_tree_view, GTK_TYPE_TREE_VIEW)
 #define TRG_TREE_VIEW_GET_PRIVATE(o) \
@@ -215,6 +225,8 @@ trg_tree_view_user_add_column_cb(GtkWidget * w,
         TRG_TREE_VIEW(gtk_tree_view_column_get_tree_view(col));
 
     trg_tree_view_add_column_after(tv, desc, -1, col);
+
+    g_signal_emit(tv, signals[SIGNAL_COLUMN_ADDED], 0, desc->id);
 }
 
 static void trg_tree_view_sort_menu_item_toggled(GtkCheckMenuItem * w,
@@ -324,18 +336,12 @@ view_popup_menu(GtkButton * button, GdkEventButton * event,
     TrgTreeViewPrivate *priv = TRG_TREE_VIEW_GET_PRIVATE(tv);
     GtkWidget *menu, *menuitem;
     trg_column_description *desc;
+    guint n_showing = 0;
     GList *li;
 
     menu = gtk_menu_new();
 
     desc = g_object_get_data(G_OBJECT(column), GDATA_KEY_COLUMN_DESC);
-    menuitem = gtk_check_menu_item_new_with_label(desc->header);
-    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
-    g_signal_connect(menuitem, "activate",
-                     G_CALLBACK(trg_tree_view_hide_column), column);
-    gtk_widget_set_sensitive(menuitem,
-                             !(desc->flags & TRG_COLUMN_UNREMOVABLE));
-    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
 
     for (li = priv->columns; li; li = g_list_next(li)) {
         trg_column_description *desc = (trg_column_description *) li->data;
@@ -346,8 +352,19 @@ view_popup_menu(GtkButton * button, GdkEventButton * event,
                              G_CALLBACK(trg_tree_view_user_add_column_cb),
                              desc);
             gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+        } else {
+        	n_showing++;
         }
     }
+
+    menuitem = gtk_check_menu_item_new_with_label(desc->header);
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
+    g_signal_connect(menuitem, "activate",
+                     G_CALLBACK(trg_tree_view_hide_column), column);
+    gtk_widget_set_sensitive(menuitem,
+                             !(desc->flags & TRG_COLUMN_UNREMOVABLE) && n_showing > 1);
+    gtk_menu_shell_prepend(GTK_MENU_SHELL(menu), menuitem);
+
     gtk_widget_show_all(menu);
 
     gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
@@ -355,12 +372,28 @@ view_popup_menu(GtkButton * button, GdkEventButton * event,
                    gdk_event_get_time((GdkEvent *) event));
 }
 
+/* This used to get the column as an argument binded when the signal was
+ * created, but it seems GTK now destroys and recreates them in some
+ * circumstances. So bind the column description instead and search for the
+ * column by its title.
+ */
 static gboolean
 col_onButtonPressed(GtkButton * button,
-                    GdkEventButton * event, GtkTreeViewColumn * col)
+                    GdkEventButton * event, trg_column_description *desc)
 {
     if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
-        view_popup_menu(button, event, col);
+    	GtkTreeView *gtv = GTK_TREE_VIEW(gtk_widget_get_parent(GTK_WIDGET(button)));
+        GList *cols = gtk_tree_view_get_columns(gtv);
+        GList *li;
+        for (li = cols; li; li = g_list_next(li)) {
+        	GtkTreeViewColumn *col = GTK_TREE_VIEW_COLUMN(li->data);
+        	if (!g_strcmp0(desc->header, gtk_tree_view_column_get_title(col))) {
+        		view_popup_menu(button, event, col);
+        		break;
+        	}
+        }
+        g_list_free(cols);
+
         return TRUE;
     }
 
@@ -417,6 +450,7 @@ trg_tree_view_add_column_after(TrgTreeView * tv,
 {
     GtkCellRenderer *renderer;
     GtkTreeViewColumn *column = NULL;
+    GtkButton *column_button = NULL;
 
     switch (desc->type) {
     case TRG_COLTYPE_TEXT:
@@ -495,8 +529,8 @@ trg_tree_view_add_column_after(TrgTreeView * tv,
                                             "wanted-value",
                                             desc->model_column, NULL);
         break;
-    case TRG_COLTYPE_STOCKICONTEXT:
-        column = trg_tree_view_icontext_column_new(desc, "stock-id");
+    case TRG_COLTYPE_ICONTEXT:
+        column = trg_tree_view_icontext_column_new(desc, "icon-name");
         break;
     case TRG_COLTYPE_FILEICONTEXT:
         column = trg_tree_view_fileicontext_column_new(desc);
@@ -533,15 +567,17 @@ trg_tree_view_add_column_after(TrgTreeView * tv,
         return;
     }
 
-    gtk_tree_view_column_set_min_width(column, 0);
+    //gtk_tree_view_column_set_min_width(column, 0);
     gtk_tree_view_column_set_resizable(column, TRUE);
     gtk_tree_view_column_set_reorderable(column, TRUE);
     gtk_tree_view_column_set_sort_column_id(column, desc->model_column);
+    gtk_tree_view_column_set_expand(column, TRUE);
+
+    /*gtk_tree_view_column_set_sizing(column,
+                                    GTK_TREE_VIEW_COLUMN_FIXED);*/
 
     if (width > 0) {
-        gtk_tree_view_column_set_sizing(column,
-                                        GTK_TREE_VIEW_COLUMN_FIXED);
-        gtk_tree_view_column_set_fixed_width(column, width);
+        //gtk_tree_view_column_set_fixed_width(column, width);
     }
 
     g_object_set_data(G_OBJECT(column), GDATA_KEY_COLUMN_DESC, desc);
@@ -552,14 +588,11 @@ trg_tree_view_add_column_after(TrgTreeView * tv,
         gtk_tree_view_move_column_after(GTK_TREE_VIEW(tv), column,
                                         after_col);
 
-#if GTK_CHECK_VERSION( 3,0,0 )
-    g_signal_connect(gtk_tree_view_column_get_button(column),
+    column_button = GTK_BUTTON(gtk_tree_view_column_get_button(column));
+
+    g_signal_connect(column_button,
                      "button-press-event", G_CALLBACK(col_onButtonPressed),
-                     column);
-#else
-    g_signal_connect(column->button, "button-press-event",
-                     G_CALLBACK(col_onButtonPressed), column);
-#endif
+                     desc);
 
     if (desc->out)
         *(desc->out) = column;
@@ -770,6 +803,16 @@ static void trg_tree_view_class_init(TrgTreeViewClass * klass)
                                      G_PARAM_STATIC_NAME |
                                      G_PARAM_STATIC_NICK |
                                      G_PARAM_STATIC_BLURB));
+
+    signals[SIGNAL_COLUMN_ADDED] =
+        g_signal_new("column-added",
+                     G_TYPE_FROM_CLASS(object_class),
+                     G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+                     G_STRUCT_OFFSET(TrgTreeViewClass,
+                                     column_added), NULL,
+                     NULL, g_cclosure_marshal_VOID__STRING,
+                     G_TYPE_NONE, 1, G_TYPE_STRING);
+
 }
 
 static void trg_tree_view_init(TrgTreeView * tv)

@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
@@ -26,6 +30,7 @@
 #include "trg-prefs.h"
 #include "protocol-constants.h"
 #include "torrent.h"
+#include "remote-exec.h"
 
 /* A few functions used to build local commands, otherwise known as actions.
  *
@@ -53,7 +58,7 @@ static const char json_exceptions[] = { 0x7f, 0x80, 0x81, 0x82, 0x83, 0x84,
 
 static gchar *dump_json_value(JsonNode * node)
 {
-    GValue value = { 0, };
+    GValue value = G_VALUE_INIT;
     GString *buffer;
 
     buffer = g_string_new("");

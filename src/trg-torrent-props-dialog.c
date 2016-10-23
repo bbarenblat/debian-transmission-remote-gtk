@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
@@ -172,7 +176,7 @@ static void trg_torrent_props_response_cb(GtkDialog * dialog, gint res_id,
         trg_json_widgets_save(priv->widgets, args);
         trg_json_widget_desc_list_free(priv->widgets);
 
-        dispatch_async(priv->client, request, on_generic_interactive_action,
+        dispatch_async(priv->client, request, on_generic_interactive_action_response,
                 priv->parent);
     }
 
@@ -329,11 +333,15 @@ static void info_page_update(TrgTorrentPropsDialog * dialog,
         gint64 dateCreated = torrent_get_date_created(t);
         gchar *dateStr = epoch_to_string(dateCreated);
 
-        if (!creator || strlen(creator) <= 0)
-            g_snprintf(buf, sizeof(buf), _("Created on %1$s"), dateStr);
-        else
-            g_snprintf(buf, sizeof(buf), _("Created by %1$s on %2$s"),
-                       creator, dateStr);
+        if (creator && strlen(creator) > 0 && dateCreated > 0)
+			g_snprintf(buf, sizeof(buf), _("Created by %1$s on %2$s"),
+						creator, dateStr);
+		else if (dateCreated > 0)
+			g_snprintf(buf, sizeof(buf), _("Created on %1$s"), dateStr);
+		else if (creator && strlen(creator) > 0)
+			g_snprintf(buf, sizeof(buf), _("Created by %1$s"), creator);
+		else
+			g_strlcpy(buf, _("N/A"), sizeof(buf));
 
         g_free(dateStr);
         gtk_label_set_text(GTK_LABEL(priv->origin_lb), buf);

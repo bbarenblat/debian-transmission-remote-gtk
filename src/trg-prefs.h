@@ -33,6 +33,7 @@
 #define TRG_PREFS_KEY_RPC_URL_PATH "rpc-url-path"
 #define TRG_PREFS_KEY_PROFILE_ID    "profile-id"
 #define TRG_PREFS_KEY_PROFILES    "profiles"
+#define TRG_PREFS_KEY_RSS    "rss"
 #define TRG_PREFS_KEY_PROFILE_NAME   "profile-name"
 #define TRG_PREFS_KEY_HOSTNAME      "hostname"
 #define TRG_PREFS_KEY_PORT          "port"
@@ -41,6 +42,7 @@
 #define TRG_PREFS_KEY_PASSWORD      "password"
 #define TRG_PREFS_KEY_AUTO_CONNECT  "auto-connect"
 #define TRG_PREFS_KEY_SSL            "ssl"
+#define TRG_PREFS_KEY_SSL_VALIDATE   "ssl-validate"
 #define TRG_PREFS_KEY_TIMEOUT            "timeout"
 #define TRG_PREFS_KEY_RETRIES            "retries"
 #define TRG_PREFS_KEY_UPDATE_INTERVAL "update-interval"
@@ -54,6 +56,7 @@
 #define TRG_PREFS_KEY_SHOW_GRAPH    "show-graph"
 #define TRG_PREFS_KEY_SYSTEM_TRAY_MINIMISE  "system-tray-minimise"
 #define TRG_PREFS_KEY_FILTER_TRACKERS  "filter-trackers"
+#define TRG_PREFS_KEY_DIRECTORIES_FIRST  "directories-first"
 #define TRG_PREFS_KEY_FILTER_DIRS  "filter-dirs"
 #define TRG_PREFS_KEY_SHOW_STATE_SELECTOR "show-state-selector"
 #define TRG_PREFS_KEY_SHOW_NOTEBOOK "show-notebook"
@@ -77,6 +80,9 @@
 #define TRG_PREFS_KEY_EXEC_COMMANDS "exec-commands"
 #define TRG_PREFS_KEY_EXEC_COMMANDS_SUBKEY_CMD "cmd"
 #define TRG_PREFS_KEY_DESTINATIONS "destinations"
+#define TRG_PREFS_KEY_RSS "rss"
+#define TRG_PREFS_RSS_SUBKEY_ID "id"
+#define TRG_PREFS_RSS_SUBKEY_URL "url"
 #define TRG_PREFS_KEY_LAST_MOVE_DESTINATION "last-move-destination"
 #define TRG_PREFS_KEY_LAST_ADD_DESTINATION "last-add-destination"
 #define TRG_PREFS_KEY_DESTINATIONS_SUBKEY_DIR "dir"
@@ -138,6 +144,7 @@ gboolean trg_prefs_get_bool(TrgPrefs * p, const gchar * key, int flags);
 JsonObject *trg_prefs_get_profile(TrgPrefs * p);
 JsonObject *trg_prefs_get_connection(TrgPrefs * p);
 JsonArray *trg_prefs_get_profiles(TrgPrefs * p);
+JsonArray *trg_prefs_get_rss(TrgPrefs *p);
 void trg_prefs_set_connection(TrgPrefs * p, JsonObject * profile);
 gint trg_prefs_get_profile_id(TrgPrefs * p);
 void trg_prefs_del_profile(TrgPrefs * p, JsonObject * profile);

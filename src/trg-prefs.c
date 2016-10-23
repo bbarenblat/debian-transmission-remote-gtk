@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <json-glib/json-glib.h>
@@ -106,6 +110,7 @@ static void trg_prefs_create_defaults(TrgPrefs * p)
 
     trg_prefs_add_default_bool_true(p, TRG_PREFS_KEY_FILTER_DIRS);
     trg_prefs_add_default_bool_true(p, TRG_PREFS_KEY_FILTER_TRACKERS);
+    trg_prefs_add_default_bool_true(p, TRG_PREFS_KEY_DIRECTORIES_FIRST);
     trg_prefs_add_default_bool_true(p, TRG_PREFS_KEY_SHOW_GRAPH);
     trg_prefs_add_default_bool_true(p, TRG_PREFS_KEY_ADD_OPTIONS_DIALOG);
     trg_prefs_add_default_bool_true(p, TRG_PREFS_KEY_SHOW_STATE_SELECTOR);
@@ -172,7 +177,7 @@ TrgPrefs *trg_prefs_new(void)
     return g_object_new(TRG_TYPE_PREFS, NULL);
 }
 
-static JsonObject *trg_prefs_new_profile_object()
+static JsonObject *trg_prefs_new_profile_object(void)
 {
     return json_object_new();
 }
@@ -421,6 +426,12 @@ JsonArray *trg_prefs_get_profiles(TrgPrefs * p)
                                         TRG_PREFS_KEY_PROFILES);
 }
 
+JsonArray *trg_prefs_get_rss(TrgPrefs *p) {
+	TrgPrefsPrivate *priv = p->priv;
+	return json_object_get_array_member(priv->userObj,
+            TRG_PREFS_KEY_RSS);
+}
+
 void
 trg_prefs_set_double(TrgPrefs * p, const gchar * key, gdouble value,
                      int flags)
@@ -487,7 +498,7 @@ JsonObject *trg_prefs_get_root(TrgPrefs * p)
     return priv->userObj;
 }
 
-void trg_prefs_empty_init(TrgPrefs * p)
+static void trg_prefs_empty_init(TrgPrefs * p)
 {
     TrgPrefsPrivate *priv = p->priv;
     JsonArray *profiles = json_array_new();

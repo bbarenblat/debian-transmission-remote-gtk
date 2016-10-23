@@ -32,6 +32,7 @@
 #define trg_strlpercent(a, b) tr_strlpercent(a, b, sizeof(a))
 #define trg_strlsize(a, b) tr_formatter_size_B(a, b, sizeof(a))
 #define trg_strlratio(a, b) tr_strlratio(a, b, sizeof(a))
+#define MAX3(a,b,c) MAX(a,MAX(b,c))
 
 #define TR_RATIO_NA  -1
 #define TR_RATIO_INF -2
@@ -78,12 +79,7 @@ char *tr_strratio(char *buf, size_t buflen, double ratio,
 char *tr_strlratio(char *buf, double ratio, size_t buflen);
 char *gtr_localtime(time_t time);
 char *gtr_localtime2(char *buf, time_t time, size_t buflen);
-int tr_snprintf(char *buf, size_t buflen, const char *fmt, ...);
-int tr_snprintf(char *buf, size_t buflen, const char *fmt, ...);
-size_t tr_strlcpy(char *dst, const void *src, size_t siz);
 double tr_truncd(double x, int decimal_places);
-int evutil_vsnprintf(char *buf, size_t buflen, const char *format,
-                     va_list ap);
 char *tr_strlsize(char *buf, guint64 bytes, size_t buflen);
 void rm_trailing_slashes(gchar * str);
 void trg_widget_set_visible(GtkWidget * w, gboolean visible);
@@ -97,7 +93,7 @@ gboolean should_be_minimised(int argc, char *argv[]);
 gboolean is_minimised_arg(const gchar * arg);
 GtkWidget *trg_vbox_new(gboolean homogeneous, gint spacing);
 GtkWidget *trg_hbox_new(gboolean homogeneous, gint spacing);
-gboolean is_unity();
+gboolean is_unity(void);
 
 #ifdef WIN32
 gchar *trg_win32_support_path(gchar * file);

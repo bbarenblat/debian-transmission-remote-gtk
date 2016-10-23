@@ -22,6 +22,10 @@
  * and JSON dispatch.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
@@ -45,9 +49,10 @@
 #include "torrent.h"
 #include "json.h"
 #include "protocol-constants.h"
+#include "upload.h"
 
 enum {
-    PROP_0, PROP_FILENAME, PROP_PARENT, PROP_CLIENT
+    PROP_0, PROP_FILENAME, PROP_PARENT, PROP_CLIENT, PROP_UPLOAD
 };
 
 enum {
@@ -63,6 +68,7 @@ struct _TrgTorrentAddDialogPrivate {
     TrgClient *client;
     TrgMainWindow *parent;
     GSList *filenames;
+    trg_upload *upload;
     GtkWidget *source_chooser;
     GtkWidget *dest_combo;
     GtkWidget *priority_combo;
@@ -70,6 +76,7 @@ struct _TrgTorrentAddDialogPrivate {
     GtkTreeStore *store;
     GtkWidget *paused_check;
     GtkWidget *delete_check;
+    guint n_files;
 };
 
 #define MAGNET_MAX_LINK_WIDTH		75
@@ -90,6 +97,9 @@ static void trg_torrent_add_dialog_set_property(GObject * object,
     case PROP_PARENT:
         priv->parent = g_value_get_object(value);
         break;
+    case PROP_UPLOAD:
+    	priv->upload = g_value_get_pointer(value);
+    	break;
     case PROP_CLIENT:
         priv->client = g_value_get_pointer(value);
         break;
@@ -115,72 +125,13 @@ trg_torrent_add_dialog_get_property(GObject * object,
     }
 }
 
-static void
-add_set_common_args(JsonObject * args, gint priority, gchar * dir)
-{
-    json_object_set_string_member(args, FIELD_FILE_DOWNLOAD_DIR, dir);
-    json_object_set_int_member(args, FIELD_BANDWIDTH_PRIORITY,
-                               (gint64) priority);
-}
-
-static gpointer add_files_threadfunc(gpointer data)
-{
-    struct add_torrent_threadfunc_args *files_thread_data =
-        (struct add_torrent_threadfunc_args *) data;
-
-    GSList *li;
-
-    for (li = files_thread_data->list; li; li = g_slist_next(li)) {
-        gchar *fileName = (gchar *) li->data;
-        JsonNode *request =
-            torrent_add(fileName, files_thread_data->flags);
-        JsonObject *args;
-        trg_response *response;
-
-        if (!request)
-            continue;
-
-        args = node_get_arguments(request);
-
-        if (files_thread_data->extraArgs)
-            add_set_common_args(args, files_thread_data->priority,
-                                files_thread_data->dir);
-
-        response = dispatch(files_thread_data->client, request);
-        response->cb_data = files_thread_data->cb_data;
-        g_idle_add(on_generic_interactive_action, response);
-    }
-
-    g_str_slist_free(files_thread_data->list);
-
-    if (files_thread_data->extraArgs)
-        g_free(files_thread_data->dir);
-
-    g_free(files_thread_data);
-
-    return NULL;
-}
-
-void launch_add_thread(struct add_torrent_threadfunc_args *args)
-{
-    GError *error = NULL;
-    g_thread_create(add_files_threadfunc, args, FALSE, &error);
-
-    if (error) {
-        g_error("thread creation error: %s", error->message);
-        g_error_free(error);
-        g_str_slist_free(args->list);
-        g_free(args);
-    }
-}
-
 static gboolean
 add_file_indexes_foreachfunc(GtkTreeModel * model,
                              GtkTreePath *
                              path G_GNUC_UNUSED,
                              GtkTreeIter * iter, gpointer data)
 {
-    JsonObject *args = (JsonObject *) data;
+    trg_upload *upload = (trg_upload *) data;
     gint priority, index, wanted;
 
     gtk_tree_model_get(model, iter, FC_PRIORITY, &priority, FC_ENABLED,
@@ -189,17 +140,8 @@ add_file_indexes_foreachfunc(GtkTreeModel * model,
     if (gtk_tree_model_iter_has_child(model, iter) || index < 0)
         return FALSE;
 
-    if (wanted)
-        add_file_id_to_array(args, FIELD_FILES_WANTED, index);
-    else
-        add_file_id_to_array(args, FIELD_FILES_UNWANTED, index);
-
-    if (priority == TR_PRI_LOW)
-        add_file_id_to_array(args, FIELD_FILES_PRIORITY_LOW, index);
-    else if (priority == TR_PRI_HIGH)
-        add_file_id_to_array(args, FIELD_FILES_PRIORITY_HIGH, index);
-    else
-        add_file_id_to_array(args, FIELD_FILES_PRIORITY_NORMAL, index);
+    upload->file_wanted[index] = wanted;
+    upload->file_priorities[index] = priority;
 
     return FALSE;
 }
@@ -225,38 +167,33 @@ trg_torrent_add_response_cb(GtkDialog * dlg, gint res_id, gpointer data)
         gchar *dir =
             trg_destination_combo_get_dir(TRG_DESTINATION_COMBO
                                           (priv->dest_combo));
+        trg_upload *upload;
 
-        if (g_slist_length(priv->filenames) == 1) {
-            JsonNode *req =
-                torrent_add((gchar *) priv->filenames->data, flags);
-            if (req) {
-                JsonObject *args = node_get_arguments(req);
-                gtk_tree_model_foreach(GTK_TREE_MODEL(priv->store),
-                                       add_file_indexes_foreachfunc, args);
-                add_set_common_args(args, priority, dir);
-                dispatch_async(priv->client, req,
-                               on_generic_interactive_action,
-                               priv->parent);
-            }
-            g_str_slist_free(priv->filenames);
+        if (priv->upload) {
+        	upload = priv->upload;
         } else {
-            struct add_torrent_threadfunc_args *args =
-                g_new(struct add_torrent_threadfunc_args, 1);
-            args->list = priv->filenames;
-            args->cb_data = priv->parent;
-            args->client = priv->client;
-            args->dir = g_strdup(dir);
-            args->priority = priority;
-            args->flags = flags;
-            args->extraArgs = TRUE;
-
-            launch_add_thread(args);
+        	upload = g_new0(trg_upload, 1);
+			upload->list = priv->filenames;
         }
+
+        upload->main_window = priv->parent;
+        upload->client = priv->client;
+        upload->dir = dir;
+        upload->priority = priority;
+        upload->flags = flags;
+        upload->extra_args = TRUE;
+
+        upload->n_files = priv->n_files;
+        upload->file_priorities = g_new0(gint, priv->n_files);
+        upload->file_wanted = g_new0(gint, priv->n_files);
+
+        gtk_tree_model_foreach(GTK_TREE_MODEL(priv->store),
+                                               add_file_indexes_foreachfunc, upload);
+
+        trg_do_upload(upload);
 
         trg_destination_combo_save_selection(TRG_DESTINATION_COMBO
                                              (priv->dest_combo));
-
-        g_free(dir);
     } else {
         g_str_slist_free(priv->filenames);
     }
@@ -305,7 +242,7 @@ onViewButtonPressed(GtkWidget * w, GdkEventButton * event, gpointer gdata)
                                                    (set_unwanted), gdata);
 }
 
-GtkWidget *gtr_file_list_new(GtkTreeStore ** store)
+static GtkWidget *gtr_file_list_new(GtkTreeStore ** store)
 {
     int size;
     int width;
@@ -323,7 +260,6 @@ GtkWidget *gtr_file_list_new(GtkTreeStore ** store)
     /* create the view */
     view = gtk_tree_view_new();
     tree_view = GTK_TREE_VIEW(view);
-    gtk_tree_view_set_rules_hint(tree_view, TRUE);
     gtk_container_set_border_width(GTK_CONTAINER(view), GUI_PAD_BIG);
     g_signal_connect(view, "button-press-event",
                      G_CALLBACK(onViewButtonPressed), view);
@@ -431,11 +367,7 @@ GtkWidget *gtr_file_list_new(GtkTreeStore ** store)
 
 static GtkWidget *gtr_dialog_get_content_area(GtkDialog * dialog)
 {
-#if GTK_CHECK_VERSION( 2,14,0 )
     return gtk_dialog_get_content_area(dialog);
-#else
-    return dialog->vbox;
-#endif
 }
 
 static void gtr_dialog_set_content(GtkDialog * dialog, GtkWidget * content)
@@ -445,7 +377,7 @@ static void gtr_dialog_set_content(GtkDialog * dialog, GtkWidget * content)
     gtk_widget_show_all(content);
 }
 
-GtkWidget *gtr_priority_combo_new(void)
+static GtkWidget *gtr_priority_combo_new(void)
 {
     return gtr_combo_box_new_enum(_("Low"), TR_PRI_LOW, _("Normal"),
                                   TR_PRI_NORMAL, _("High"), TR_PRI_HIGH,
@@ -469,7 +401,7 @@ static void addTorrentFilters(GtkFileChooser * chooser)
 
 static void
 store_add_node(GtkTreeStore * store, GtkTreeIter * parent,
-               trg_files_tree_node * node)
+               trg_files_tree_node * node, guint *n_files)
 {
     GtkTreeIter child;
     GList *li;
@@ -480,11 +412,14 @@ store_add_node(GtkTreeStore * store, GtkTreeIter * parent,
                            1, FC_INDEX, node->index,
                            FC_PRIORITY, TR_PRI_NORMAL,
                            FC_SIZE, node->length, -1);
+
+        if (!node->children)
+            *n_files = *n_files + 1;
     }
 
     for (li = node->children; li; li = g_list_next(li))
         store_add_node(store, node->name ? &child : NULL,
-                       (trg_files_tree_node *) li->data);
+                       (trg_files_tree_node *) li->data, n_files);
 }
 
 static void torrent_not_parsed_warning(GtkWindow * parent)
@@ -515,6 +450,28 @@ static void torrent_not_found_error(GtkWindow * parent, gchar * file)
 }
 
 static void
+trg_torrent_add_dialog_set_upload(TrgTorrentAddDialog *d, trg_upload *upload) {
+    TrgTorrentAddDialogPrivate *priv =
+        TRG_TORRENT_ADD_DIALOG_GET_PRIVATE(d);
+    GtkButton *chooser = GTK_BUTTON(priv->source_chooser);
+    trg_torrent_file *tor_data = NULL;
+
+    if (upload->uid)
+        gtk_button_set_label(chooser, upload->uid);
+
+    tor_data = trg_parse_torrent_data(upload->upload_response->raw, upload->upload_response->size);
+
+    if (!tor_data) {
+      torrent_not_parsed_warning(GTK_WINDOW(priv->parent));
+    } else {
+      store_add_node(priv->store, NULL, tor_data->top_node, &priv->n_files);
+      trg_torrent_file_free(tor_data);
+    }
+
+    gtk_widget_set_sensitive(priv->file_list, tor_data != NULL);
+}
+
+static void
 trg_torrent_add_dialog_set_filenames(TrgTorrentAddDialog * d,
                                      GSList * filenames)
 {
@@ -524,6 +481,11 @@ trg_torrent_add_dialog_set_filenames(TrgTorrentAddDialog * d,
     gint nfiles = filenames ? g_slist_length(filenames) : 0;
 
     gtk_tree_store_clear(priv->store);
+
+    if (priv->upload) {
+    	trg_upload_free(priv->upload);
+    	priv->upload = NULL;
+    }
 
     if (nfiles == 1) {
         gchar *file_name = (gchar *) filenames->data;
@@ -560,7 +522,7 @@ trg_torrent_add_dialog_set_filenames(TrgTorrentAddDialog * d,
                 if (!tor_data) {
                     torrent_not_parsed_warning(GTK_WINDOW(priv->parent));
                 } else {
-                    store_add_node(priv->store, NULL, tor_data->top_node);
+                    store_add_node(priv->store, NULL, tor_data->top_node, &priv->n_files);
                     trg_torrent_file_free(tor_data);
                 }
             } else {
@@ -738,7 +700,8 @@ static GObject *trg_torrent_add_dialog_constructor(GType type,
         TRG_TORRENT_ADD_DIALOG_GET_PRIVATE(obj);
     TrgPrefs *prefs = trg_client_get_prefs(priv->client);
 
-    GtkWidget *t, *l, *applyall_combo;
+    GtkWidget *t, *applyall_combo;
+    guint row = 0;
 
     /* window */
     gtk_window_set_title(GTK_WINDOW(obj), _("Add Torrent"));
@@ -757,10 +720,8 @@ static GObject *trg_torrent_add_dialog_constructor(GType type,
     gtk_dialog_set_default_response(GTK_DIALOG(obj), GTK_RESPONSE_ACCEPT);
 
     /* workspace */
-    t = gtk_table_new(6, 2, FALSE);
-    gtk_container_set_border_width(GTK_CONTAINER(t), GUI_PAD_BIG);
-    gtk_table_set_row_spacings(GTK_TABLE(t), GUI_PAD);
-    gtk_table_set_col_spacings(GTK_TABLE(t), GUI_PAD_BIG);
+    t = hig_workarea_create();
+    //gtk_container_set_border_width(GTK_CONTAINER(t), GUI_PAD_BIG);
 
     priv->file_list = gtr_file_list_new(&priv->store);
     gtk_widget_set_sensitive(priv->file_list, FALSE);
@@ -782,59 +743,41 @@ static GObject *trg_torrent_add_dialog_constructor(GType type,
     priv->priority_combo = gtr_priority_combo_new();
     gtk_combo_box_set_active(GTK_COMBO_BOX(priv->priority_combo), 1);
 
-    l = gtk_label_new_with_mnemonic(_("_Torrent file:"));
-    gtk_misc_set_alignment(GTK_MISC(l), 0.0f, 0.5f);
-    gtk_table_attach(GTK_TABLE(t), l, 0, 1, 0, 1, GTK_FILL, 0, 0, 0);
-
     priv->source_chooser = gtk_button_new();
-    gtk_button_set_alignment(GTK_BUTTON(priv->source_chooser), 0.0f, 0.5f);
-    trg_torrent_add_dialog_set_filenames(TRG_TORRENT_ADD_DIALOG(obj),
-                                         priv->filenames);
+    hig_workarea_add_row(t, &row, _("_Torrent file:"), priv->source_chooser, NULL);
 
-    gtk_table_attach(GTK_TABLE(t), priv->source_chooser, 1, 2, 0,
-                     1, ~0, 0, 0, 0);
-    gtk_label_set_mnemonic_widget(GTK_LABEL(l), priv->source_chooser);
+    gtk_button_set_alignment(GTK_BUTTON(priv->source_chooser), 0.0f, 0.5f);
+
+    if (priv->filenames)
+		trg_torrent_add_dialog_set_filenames(TRG_TORRENT_ADD_DIALOG(obj),
+											 priv->filenames);
+    else if (priv->upload)
+    	trg_torrent_add_dialog_set_upload(TRG_TORRENT_ADD_DIALOG(obj), priv->upload);
+
+
     g_signal_connect(priv->source_chooser, "clicked",
                      G_CALLBACK(trg_torrent_add_dialog_source_click_cb),
                      obj);
 
-    l = gtk_label_new_with_mnemonic(_("_Destination folder:"));
-    gtk_misc_set_alignment(GTK_MISC(l), 0.0f, 0.5f);
-    gtk_table_attach(GTK_TABLE(t), l, 0, 1, 1, 2, GTK_FILL, 0, 0, 0);
-
     priv->dest_combo =
         trg_destination_combo_new(priv->client,
                                   TRG_PREFS_KEY_LAST_ADD_DESTINATION);
-    gtk_table_attach(GTK_TABLE(t), priv->dest_combo, 1, 2, 1,
-                     2, ~0, 0, 0, 0);
-    gtk_label_set_mnemonic_widget(GTK_LABEL(l), priv->dest_combo);
+
+    hig_workarea_add_row(t, &row, _("_Destination folder:"), priv->dest_combo, NULL);
 
     gtk_widget_set_size_request(priv->file_list, 466u, 300u);
-    gtk_table_attach_defaults(GTK_TABLE(t), priv->file_list, 0, 2, 2, 3);
 
-    l = gtk_label_new_with_mnemonic(_("Apply to all:"));
-    gtk_misc_set_alignment(GTK_MISC(l), 0.0f, 0.5f);
-    gtk_table_attach(GTK_TABLE(t), l, 0, 1, 3, 4, ~0, 0, 0, 0);
+    hig_workarea_add_wide_tall_control(t, &row, priv->file_list);
 
     applyall_combo =
-        trg_torrent_add_dialog_apply_all_combo_new(TRG_TORRENT_ADD_DIALOG
-                                                   (obj));
-    gtk_table_attach(GTK_TABLE(t), applyall_combo, 1, 2, 3, 4, ~0, 0, 0,
-                     0);
+        trg_torrent_add_dialog_apply_all_combo_new(TRG_TORRENT_ADD_DIALOG(obj));
 
-    l = gtk_label_new_with_mnemonic(_("Torrent _priority:"));
-    gtk_misc_set_alignment(GTK_MISC(l), 0.0f, 0.5f);
-    gtk_table_attach(GTK_TABLE(t), l, 0, 1, 4, 5, ~0, 0, 0, 0);
+    hig_workarea_add_row(t, &row, _("Apply to all:"), applyall_combo, NULL);
 
-    gtk_table_attach(GTK_TABLE(t), priv->priority_combo, 1, 2, 4,
-                     5, ~0, 0, 0, 0);
-    gtk_label_set_mnemonic_widget(GTK_LABEL(l), priv->priority_combo);
+    hig_workarea_add_row(t, &row, _("Torrent _priority:"), priv->priority_combo, NULL);
 
-    gtk_table_attach(GTK_TABLE(t), priv->paused_check, 0, 2, 5,
-                     6, GTK_FILL, 0, 0, 0);
-
-    gtk_table_attach(GTK_TABLE(t), priv->delete_check, 0, 2, 6,
-                     7, GTK_FILL, 0, 0, 0);
+    hig_workarea_add_wide_control(t, &row, priv->paused_check);
+    hig_workarea_add_wide_control(t, &row, priv->delete_check);
 
     gtr_dialog_set_content(GTK_DIALOG(obj), t);
 
@@ -861,6 +804,21 @@ trg_torrent_add_dialog_class_init(TrgTorrentAddDialogClass * klass)
                                     g_param_spec_pointer("filenames",
                                                          "filenames",
                                                          "filenames",
+                                                         G_PARAM_READWRITE
+                                                         |
+                                                         G_PARAM_CONSTRUCT_ONLY
+                                                         |
+                                                         G_PARAM_STATIC_NAME
+                                                         |
+                                                         G_PARAM_STATIC_NICK
+                                                         |
+                                                         G_PARAM_STATIC_BLURB));
+
+    g_object_class_install_property(object_class,
+                                    PROP_UPLOAD,
+                                    g_param_spec_pointer("upload",
+                                                         "upload",
+                                                         "upload",
                                                          G_PARAM_READWRITE
                                                          |
                                                          G_PARAM_CONSTRUCT_ONLY
@@ -906,12 +864,21 @@ static void trg_torrent_add_dialog_init(TrgTorrentAddDialog * self)
 {
 }
 
-TrgTorrentAddDialog *trg_torrent_add_dialog_new(TrgMainWindow * parent,
+TrgTorrentAddDialog *trg_torrent_add_dialog_new_from_filenames(TrgMainWindow * parent,
                                                 TrgClient * client,
                                                 GSList * filenames)
 {
     return g_object_new(TRG_TYPE_TORRENT_ADD_DIALOG, "filenames",
                         filenames, "parent", parent, "client", client,
+                        NULL);
+}
+
+TrgTorrentAddDialog *trg_torrent_add_dialog_new_from_upload(TrgMainWindow * parent,
+                                                TrgClient * client,
+                                                trg_upload *upload)
+{
+    return g_object_new(TRG_TYPE_TORRENT_ADD_DIALOG, "upload",
+                        upload, "parent", parent, "client", client,
                         NULL);
 }
 
@@ -941,22 +908,21 @@ void trg_torrent_add_dialog(TrgMainWindow * win, TrgClient * client)
                                                 prefs);
 
         if (showOptions) {
-            TrgTorrentAddDialog *dialog = trg_torrent_add_dialog_new(win,
+            TrgTorrentAddDialog *dialog = trg_torrent_add_dialog_new_from_filenames(win,
                                                                      client,
                                                                      l);
-
             gtk_widget_show_all(GTK_WIDGET(dialog));
+            gtk_window_present(GTK_WINDOW(dialog));
         } else {
-            struct add_torrent_threadfunc_args *args =
-                g_new0(struct add_torrent_threadfunc_args, 1);
+        	trg_upload *upload = g_new0(trg_upload, 1);
 
-            args->list = l;
-            args->cb_data = win;
-            args->client = client;
-            args->extraArgs = FALSE;
-            args->flags = trg_prefs_get_add_flags(prefs);
+            upload->list = l;
+            upload->main_window = win;
+            upload->client = client;
+            upload->extra_args = FALSE;
+            upload->flags = trg_prefs_get_add_flags(prefs);
 
-            launch_add_thread(args);
+            trg_do_upload(upload);
         }
     }
 

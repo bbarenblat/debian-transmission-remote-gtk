@@ -60,6 +60,7 @@ struct _TrgPreferencesDialogPrivate {
     GtkWidget *profileNameEntry;
     GtkWidget *fullUpdateCheck;
     GList *widgets;
+    GtkWidget *notebook;
 };
 
 static GObject *instance = NULL;
@@ -327,6 +328,13 @@ static void toggle_filter_trackers(GtkToggleButton * w, gpointer win)
         trg_main_window_get_state_selector(TRG_MAIN_WINDOW(win));
     trg_state_selector_set_show_trackers(selector,
                                          gtk_toggle_button_get_active(w));
+}
+
+static void toggle_directories_first(GtkToggleButton * w, gpointer win){
+	TrgStateSelector *selector =
+		trg_main_window_get_state_selector(TRG_MAIN_WINDOW(win));
+	trg_state_selector_set_directories_first(selector,
+											gtk_toggle_button_get_active(w));
 }
 
 #if TRG_WITH_GRAPH
@@ -601,7 +609,7 @@ static GtkWidget *trg_prefs_openExecPage(TrgPreferencesDialog * dlg)
     model = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
     ptv = trg_persistent_tree_view_new(priv->prefs, model,
-                                       TRG_PREFS_KEY_EXEC_COMMANDS);
+                                       TRG_PREFS_KEY_EXEC_COMMANDS, TRG_PREFS_CONNECTION);
     trg_persistent_tree_view_set_add_select(ptv,
                                             trg_persistent_tree_view_add_column
                                             (ptv, 0,
@@ -614,12 +622,48 @@ static GtkWidget *trg_prefs_openExecPage(TrgPreferencesDialog * dlg)
     trg_pref_widget_refresh(dlg, wd);
     priv->widgets = g_list_append(priv->widgets, wd);
 
-    gtk_table_attach(GTK_TABLE(t), GTK_WIDGET(ptv), 1, 2, row, row + 1,
-                     GTK_EXPAND | GTK_SHRINK | GTK_FILL,
-                     GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0, 0);
+    hig_workarea_add_wide_tall_control(t, &row, GTK_WIDGET(ptv));
 
     return t;
 }
+
+#ifdef HAVE_RSS
+static GtkWidget *trg_prefs_rss_page(TrgPreferencesDialog * dlg) {
+    TrgPreferencesDialogPrivate *priv =
+        TRG_PREFERENCES_DIALOG_GET_PRIVATE(dlg);
+    GtkWidget *t;
+    guint row = 0;
+    TrgPersistentTreeView *ptv;
+    trg_pref_widget_desc *wd;
+    GtkListStore *model;
+
+    t = hig_workarea_create();
+
+    hig_workarea_add_section_title(t, &row,
+                                   _("RSS Feeds"));
+
+    model = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
+
+    ptv = trg_persistent_tree_view_new(priv->prefs, model,
+                                       TRG_PREFS_KEY_RSS, TRG_PREFS_GLOBAL);
+    trg_persistent_tree_view_set_add_select(ptv,
+                                            trg_persistent_tree_view_add_column
+                                            (ptv, 0,
+                                             TRG_PREFS_RSS_SUBKEY_ID,
+                                             _("Name")));
+    trg_persistent_tree_view_add_column(ptv, 1,
+                                        TRG_PREFS_RSS_SUBKEY_URL,
+                                        _("URL"));
+
+    wd = trg_persistent_tree_view_get_widget_desc(ptv);
+    trg_pref_widget_refresh(dlg, wd);
+    priv->widgets = g_list_append(priv->widgets, wd);
+
+    hig_workarea_add_wide_tall_control(t, &row, GTK_WIDGET(ptv));
+
+    return t;
+}
+#endif
 
 static GtkWidget *trg_prefs_dirsPage(TrgPreferencesDialog * dlg)
 {
@@ -639,7 +683,7 @@ static GtkWidget *trg_prefs_dirsPage(TrgPreferencesDialog * dlg)
     model = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
     ptv = trg_persistent_tree_view_new(priv->prefs, model,
-                                       TRG_PREFS_KEY_DESTINATIONS);
+                                       TRG_PREFS_KEY_DESTINATIONS, TRG_PREFS_CONNECTION);
     trg_persistent_tree_view_set_add_select(ptv,
                                             trg_persistent_tree_view_add_column
                                             (ptv, 0,
@@ -652,9 +696,7 @@ static GtkWidget *trg_prefs_dirsPage(TrgPreferencesDialog * dlg)
     trg_pref_widget_refresh(dlg, wd);
     priv->widgets = g_list_append(priv->widgets, wd);
 
-    gtk_table_attach(GTK_TABLE(t), GTK_WIDGET(ptv), 1, 2, row, row + 1,
-                     GTK_EXPAND | GTK_SHRINK | GTK_FILL,
-                     GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0, 0);
+    hig_workarea_add_wide_tall_control(t, &row, GTK_WIDGET(ptv));
 
     return t;
 }
@@ -667,6 +709,7 @@ static GtkWidget *trg_prefs_viewPage(TrgPreferencesDialog * dlg)
     GtkWidget *w, *dep, *t, *tray;
     guint row = 0;
     gboolean _is_unity = is_unity();
+    gchar *tray_label;
 
     t = hig_workarea_create();
 
@@ -693,6 +736,13 @@ static GtkWidget *trg_prefs_viewPage(TrgPreferencesDialog * dlg)
                      G_CALLBACK(toggle_filter_trackers), priv->win);
     hig_workarea_add_wide_control(t, &row, w);
 
+	w = trgp_check_new(dlg, _("Directories first"),
+						TRG_PREFS_KEY_DIRECTORIES_FIRST, TRG_PREFS_GLOBAL,
+						GTK_TOGGLE_BUTTON(dep));
+	g_signal_connect(G_OBJECT(w), "toggled",
+					 G_CALLBACK(toggle_directories_first), priv->win);
+	hig_workarea_add_wide_control(t, &row, w);
+
     w = trgp_check_new(dlg, _("Torrent Details"),
                        TRG_PREFS_KEY_SHOW_NOTEBOOK, TRG_PREFS_GLOBAL,
                        NULL);
@@ -708,33 +758,29 @@ static GtkWidget *trg_prefs_viewPage(TrgPreferencesDialog * dlg)
     hig_workarea_add_wide_control(t, &row, w);
 #endif
 
-#ifndef HAVE_LIBAPPINDICATOR
-    if (!_is_unity) {
-#endif
-        hig_workarea_add_section_title(t, &row, _("System Tray"));
+	hig_workarea_add_section_title(t, &row, _("System Tray"));
 
-        tray = trgp_check_new(dlg, _("Show in system tray"),
-                              TRG_PREFS_KEY_SYSTEM_TRAY, TRG_PREFS_GLOBAL,
-                              NULL);
-        g_signal_connect(G_OBJECT(tray), "toggled",
-                         G_CALLBACK(toggle_tray_icon), priv->win);
-        hig_workarea_add_wide_control(t, &row, tray);
+	if (_is_unity) {
+		tray_label = _("Show in system tray (needs whitelisting in unity)");
+	} else {
+		tray_label = _("Show in system tray");
+	}
 
-        if (!_is_unity) {
-            w = trgp_check_new(dlg, _("Minimise to system tray"),
-                               TRG_PREFS_KEY_SYSTEM_TRAY_MINIMISE,
-                               TRG_PREFS_GLOBAL, NULL);
-            gtk_widget_set_sensitive(w,
-                                     gtk_toggle_button_get_active
-                                     (GTK_TOGGLE_BUTTON(tray)));
-            g_signal_connect(G_OBJECT(tray), "toggled",
-                             G_CALLBACK(toggle_active_arg_is_sensitive),
-                             w);
-            hig_workarea_add_wide_control(t, &row, w);
-        }
-#ifndef HAVE_LIBAPPINDICATOR
-    }
-#endif
+	tray = trgp_check_new(dlg, tray_label,
+	TRG_PREFS_KEY_SYSTEM_TRAY, TRG_PREFS_GLOBAL,
+	NULL);
+	g_signal_connect(G_OBJECT(tray), "toggled", G_CALLBACK(toggle_tray_icon),
+			priv->win);
+	hig_workarea_add_wide_control(t, &row, tray);
+
+	w = trgp_check_new(dlg, _("Minimise to system tray"),
+	TRG_PREFS_KEY_SYSTEM_TRAY_MINIMISE,
+	TRG_PREFS_GLOBAL, NULL);
+	gtk_widget_set_sensitive(w,
+			gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(tray)));
+	g_signal_connect(G_OBJECT(tray), "toggled",
+			G_CALLBACK(toggle_active_arg_is_sensitive), w);
+	hig_workarea_add_wide_control(t, &row, w);
 
 #ifdef HAVE_LIBNOTIFY
     hig_workarea_add_section_title(t, &row, _("Notifications"));
@@ -799,10 +845,7 @@ static GtkWidget *trg_prefs_serverPage(TrgPreferencesDialog * dlg)
     hig_workarea_add_row(t, &row, _("Name:"), priv->profileNameEntry,
                          NULL);
 
-    gtk_table_attach(GTK_TABLE(t), profileButtonsHbox, 1, 2, row, row + 1,
-                     GTK_EXPAND | GTK_SHRINK, 0, 0, 0);
-
-    row++;
+    hig_workarea_add_wide_control(t, &row, profileButtonsHbox);
 
     hig_workarea_add_section_title(t, &row, _("Connection"));
 
@@ -831,6 +874,10 @@ static GtkWidget *trg_prefs_serverPage(TrgPreferencesDialog * dlg)
     w = trgp_check_new(dlg, _("SSL"), TRG_PREFS_KEY_SSL, TRG_PREFS_PROFILE,
                        NULL);
     hig_workarea_add_wide_control(t, &row, w);
+    w = trgp_check_new(dlg, _("Validate SSL Certificate"), TRG_PREFS_KEY_SSL_VALIDATE, TRG_PREFS_PROFILE,
+                       GTK_TOGGLE_BUTTON(w));
+    hig_workarea_add_wide_control(t, &row, w);
+
 #endif
 
     w = trgp_spin_new(dlg, TRG_PREFS_KEY_TIMEOUT, 1, 3600, 1,
@@ -847,6 +894,7 @@ static GtkWidget *trg_prefs_serverPage(TrgPreferencesDialog * dlg)
     gtk_box_pack_start(GTK_BOX(frameHbox), priv->profileComboBox, FALSE,
                        FALSE, 4);
     gtk_frame_set_label_widget(GTK_FRAME(frame), frameHbox);
+    gtk_container_set_border_width(GTK_CONTAINER(frame), 5);
     gtk_container_add(GTK_CONTAINER(frame), t);
 
     return frame;
@@ -886,7 +934,7 @@ static GObject *trg_preferences_dialog_constructor(GType type,
     g_signal_connect(G_OBJECT(object), "response",
                      G_CALLBACK(trg_preferences_response_cb), NULL);
 
-    notebook = gtk_notebook_new();
+    notebook = priv->notebook = gtk_notebook_new();
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
                              trg_prefs_serverPage(TRG_PREFERENCES_DIALOG
@@ -913,11 +961,23 @@ static GObject *trg_preferences_dialog_constructor(GType type,
                                                 (object)),
                              gtk_label_new(_("Directories")));
 
+#ifdef HAVE_RSS
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
+                             trg_prefs_rss_page(TRG_PREFERENCES_DIALOG
+                                                (object)),
+                             gtk_label_new(_("RSS Feeds")));
+#endif
+
     gtk_container_set_border_width(GTK_CONTAINER(notebook), GUI_PAD);
 
     gtk_box_pack_start(GTK_BOX(contentvbox), notebook, TRUE, TRUE, 0);
 
     return object;
+}
+
+void trg_preferences_dialog_set_page(TrgPreferencesDialog *pref_dlg, guint page) {
+	TrgPreferencesDialogPrivate *priv = TRG_PREFERENCES_DIALOG_GET_PRIVATE(pref_dlg);
+	gtk_notebook_set_current_page(GTK_NOTEBOOK(priv->notebook), page);
 }
 
 static void trg_preferences_dialog_init(TrgPreferencesDialog * pref_dlg)

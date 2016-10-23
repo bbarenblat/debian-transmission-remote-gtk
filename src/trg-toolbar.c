@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 
@@ -143,7 +147,7 @@ trg_toolbar_install_widget_prop(GObjectClass * class, guint propId,
                                                         G_PARAM_STATIC_BLURB));
 }
 
-GtkWidget *trg_toolbar_item_new(TrgToolbar * toolbar,
+static GtkWidget *trg_toolbar_item_new(TrgToolbar * toolbar,
                                 gchar * text,
                                 int *index, gchar * icon,
                                 gboolean sensitive)
@@ -229,8 +233,8 @@ static GObject *trg_toolbar_constructor(GType type,
                              GTK_STOCK_REMOVE, FALSE);
 
     priv->tb_delete =
-        trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Remove with data"),
-                             &position, GTK_STOCK_CLEAR, FALSE);
+        trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Remove and delete data"),
+                             &position, GTK_STOCK_DELETE, FALSE);
 
     separator = gtk_separator_tool_item_new();
     gtk_toolbar_insert(GTK_TOOLBAR(obj), separator, position++);
@@ -242,10 +246,6 @@ static GObject *trg_toolbar_constructor(GType type,
     priv->tb_remote_prefs =
         trg_toolbar_item_new(TRG_TOOLBAR(obj), _("Remote Preferences"),
                              &position, GTK_STOCK_NETWORK, FALSE);
-
-#if !GTK_CHECK_VERSION( 3, 0, 0 )
-    gtk_toolbar_set_tooltips(GTK_TOOLBAR(obj), TRUE);
-#endif
 
     g_signal_connect(G_OBJECT(priv->prefs), "pref-profile-changed",
                      G_CALLBACK(trg_toolbar_refresh_menu), obj);

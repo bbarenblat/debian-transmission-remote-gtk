@@ -17,14 +17,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
 #include <glib/gi18n.h>
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 #include "torrent.h"
 #include "json.h"
@@ -504,7 +504,7 @@ update_torrent_iter(TrgTorrentModel * model,
                                 peerfrom_get_resume(pf));
         }
     }
-#ifdef DEBUG
+#ifdef TRG_DEBUG
     gtk_list_store_set(ls, iter, TORRENT_COLUMN_ICON, statusIcon, -1);
     gtk_list_store_set(ls, iter,
                        TORRENT_COLUMN_NAME, torrent_get_name(t), -1);
@@ -535,6 +535,10 @@ update_torrent_iter(TrgTorrentModel * model,
                        TORRENT_COLUMN_ADDED, torrent_get_added_date(t),
                        -1);
     gtk_list_store_set(ls, iter, TORRENT_COLUMN_DOWNLOADDIR, downloadDir,
+                       -1);
+    gtk_list_store_set(ls, iter, TORRENT_COLUMN_PEERS_CONNECTED, torrent_get_peers_connected(t),
+                       -1);
+    gtk_list_store_set(ls, iter, TORRENT_COLUMN_ETA, torrent_get_eta(t),
                        -1);
     gtk_list_store_set(ls, iter, TORRENT_COLUMN_BANDWIDTH_PRIORITY,
                        torrent_get_bandwidth_priority(t), -1);
@@ -667,7 +671,7 @@ GHashTable *get_torrent_table(TrgTorrentModel * model)
     return priv->ht;
 }
 
-gboolean
+static gboolean
 trg_model_find_removed_foreachfunc(GtkTreeModel * model,
                                    GtkTreePath *
                                    path G_GNUC_UNUSED,
@@ -688,7 +692,7 @@ trg_model_find_removed_foreachfunc(GtkTreeModel * model,
     return FALSE;
 }
 
-GList *trg_torrent_model_find_removed(GtkTreeModel * model,
+static GList *trg_torrent_model_find_removed(GtkTreeModel * model,
                                       gint64 currentSerial)
 {
     struct TrgModelRemoveData args;

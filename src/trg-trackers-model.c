@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
 
@@ -85,7 +89,7 @@ trg_trackers_model_update(TrgTrackersModel * model,
 
 #ifdef DEBUG
         gtk_list_store_set(GTK_LIST_STORE(model), &trackIter,
-                           TRACKERCOL_ICON, GTK_STOCK_NETWORK, -1);
+                           TRACKERCOL_ICON, "network-workgroup", -1);
         gtk_list_store_set(GTK_LIST_STORE(model), &trackIter,
                            TRACKERCOL_TIER,
                            tracker_stats_get_tier(tracker), -1);
@@ -123,7 +127,7 @@ trg_trackers_model_update(TrgTrackersModel * model,
                            tracker_stats_get_seeder_count(tracker), -1);
 #else
         gtk_list_store_set(GTK_LIST_STORE(model), &trackIter,
-                           TRACKERCOL_ICON, GTK_STOCK_NETWORK,
+                           TRACKERCOL_ICON, "network-workgroup",
                            TRACKERCOL_ID, trackerId,
                            TRACKERCOL_UPDATESERIAL, updateSerial,
                            TRACKERCOL_TIER,

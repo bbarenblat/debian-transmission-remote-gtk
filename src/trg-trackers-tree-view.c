@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -66,7 +70,7 @@ static gboolean on_trackers_update(gpointer data)
     trg_trackers_model_set_accept(TRG_TRACKERS_MODEL(model), TRUE);
 
     response->cb_data = priv->win;
-    return on_generic_interactive_action(data);
+    return on_generic_interactive_action_response(data);
 }
 
 void
@@ -115,7 +119,7 @@ trg_tracker_announce_edited(GtkCellRendererText * renderer,
     req = torrent_set(torrentIds);
     args = node_get_arguments(req);
 
-    if (!g_strcmp0(icon, GTK_STOCK_ADD)) {
+    if (!g_strcmp0(icon, "list-add")) {
         json_array_add_string_element(trackerModifiers, new_text);
         json_object_set_array_member(args, "trackerAdd", trackerModifiers);
     } else {
@@ -164,7 +168,7 @@ static void trg_trackers_tree_view_init(TrgTrackersTreeView * self)
     trg_column_description *desc;
 
     desc =
-        trg_tree_view_reg_column(ttv, TRG_COLTYPE_STOCKICONTEXT,
+        trg_tree_view_reg_column(ttv, TRG_COLTYPE_ICONTEXT,
                                  TRACKERCOL_TIER, _("Tier"), "tier",
                                  TRG_COLUMN_UNREMOVABLE);
     desc->model_column_extra = TRACKERCOL_ICON;
@@ -220,7 +224,7 @@ static void add_tracker(GtkWidget * w, gpointer data)
 
     gtk_list_store_append(GTK_LIST_STORE(model), &iter);
     gtk_list_store_set(GTK_LIST_STORE(model), &iter, TRACKERCOL_ICON,
-                       GTK_STOCK_ADD, -1);
+                       "list-add", -1);
 
     path = gtk_tree_model_get_path(model, &iter);
     gtk_tree_view_set_cursor(tv, path, priv->announceColumn, TRUE);

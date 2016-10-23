@@ -17,12 +17,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib-object.h>
 #include <glib/gprintf.h>
 #include <json-glib/json-glib.h>
 #include <gtk/gtk.h>
 
-#include "config.h"
 #include "protocol-constants.h"
 #include "requests.h"
 #include "json.h"
@@ -100,7 +103,7 @@ gdouble json_double_to_progress(JsonNode * n)
 
 gdouble json_node_really_get_double(JsonNode * node)
 {
-    GValue a = { 0 };
+    GValue a = G_VALUE_INIT;
 
     json_node_get_value(node, &a);
     switch (G_VALUE_TYPE(&a)) {

@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 
 typedef struct {
     GtkTreeViewClass parent_class;
+    void (*column_added) (TrgTreeView * tv, const gchar *id);
 } TrgTreeViewClass;
 
 GType trg_tree_view_get_type(void);
@@ -51,7 +52,7 @@ GtkWidget *trg_tree_view_new(void);
 G_END_DECLS GList *trg_tree_view_get_selected_refs_list(GtkTreeView * tv);
 
 enum {
-    TRG_COLTYPE_STOCKICONTEXT,
+    TRG_COLTYPE_ICONTEXT,
     TRG_COLTYPE_FILEICONTEXT,
     TRG_COLTYPE_WANTED,
     TRG_COLTYPE_TEXT,

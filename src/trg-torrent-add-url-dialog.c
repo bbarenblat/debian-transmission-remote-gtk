@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
@@ -90,7 +94,7 @@ trg_torrent_add_url_response_cb(TrgTorrentAddUrlDialog * dlg, gint res_id,
                             gtk_toggle_button_get_active
                             (GTK_TOGGLE_BUTTON(priv->startCheck)));
         dispatch_async(priv->client, request,
-                       on_generic_interactive_action, data);
+                       on_generic_interactive_action_response, data);
     }
 
     gtk_widget_destroy(GTK_WIDGET(dlg));

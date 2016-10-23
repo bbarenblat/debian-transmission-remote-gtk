@@ -1,3 +1,5 @@
+[type: gettext/ini]data/transmission-remote-gtk.desktop.in
+[type: gettext/xml]data/transmission-remote-gtk.appdata.xml.in
 src/bencode.c
 src/hig.c
 src/json.c
@@ -6,6 +8,7 @@ src/remote-exec.c
 src/requests.c
 src/session-get.c
 src/torrent.c
+src/torrent-cell-renderer.c
 src/trg-about-window.c
 src/trg-cell-renderer-epoch.c
 src/trg-cell-renderer-eta.c
@@ -20,6 +23,7 @@ src/trg-file-parser.c
 src/trg-files-model.c
 src/trg-files-tree-view.c
 src/trg-general-panel.c
+src/trg-gtk-app.c
 src/trg-json-widgets.c
 src/trg-main-window.c
 src/trg-menu-bar.c
@@ -29,6 +33,7 @@ src/trg-peers-tree-view.c
 src/trg-preferences-dialog.c
 src/trg-prefs.c
 src/trg-remote-prefs-dialog.c
+src/trg-rss-window.c
 src/trg-state-selector.c
 src/trg-stats-dialog.c
 src/trg-status-bar.c

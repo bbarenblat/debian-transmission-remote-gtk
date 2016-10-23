@@ -10,15 +10,15 @@ BUILDING
 
   Building a transmission-remote-gtk release from the command line:
 
-    $ tar zxfv transmission-remote-gtk-1.1.1.tar.gz
-    $ cd transmission-remote-gtk-1.1.1
+    $ tar zxfv transmission-remote-gtk-1.2.tar.gz
+    $ cd transmission-remote-gtk-1.2
     $ ./configure
     $ make
     # make install
 
   Building from git clone:
     
-    $ git clone https://code.google.com/p/transmission-remote-gtk/
+    $ git clone https://github.com/transmission-remote-gtk/transmission-remote-gtk.git
     $ ./autogen.sh
     $ ./configure
     $ make

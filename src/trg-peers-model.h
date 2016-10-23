@@ -56,7 +56,7 @@ typedef struct {
 
 GType trg_peers_model_get_type(void);
 
-TrgPeersModel *trg_peers_model_new();
+TrgPeersModel *trg_peers_model_new(void);
 
 G_END_DECLS struct peerAndIter {
     const gchar *ip;
@@ -69,6 +69,7 @@ enum {
     PEERSCOL_IP,
 #if HAVE_GEOIP
     PEERSCOL_COUNTRY,
+    PEERSCOL_CITY,
 #endif
     PEERSCOL_HOST,
     PEERSCOL_FLAGS,
@@ -84,7 +85,16 @@ void trg_peers_model_update(TrgPeersModel * model, TrgTreeView * tv,
                             gint64 updateSerial, JsonObject * t,
                             gboolean first);
 
+#if HAVE_GEOIP
+void trg_peers_model_add_city_column(TrgPeersModel *model);
+void trg_peers_model_add_country_column(TrgPeersModel *model);
+gboolean trg_peers_model_has_city_db(TrgPeersModel *model);
+gboolean trg_peers_model_has_country_db(TrgPeersModel *model);
+#endif
+
 #endif                          /* TRG_PEERS_MODEL_H_ */
 
 #define TRG_GEOIP_DATABASE "/usr/share/GeoIP/GeoIP.dat"
 #define TRG_GEOIPV6_DATABASE "/usr/share/GeoIP/GeoIPv6.dat"
+#define TRG_GEOIP_CITY_DATABASE "/usr/share/GeoIP/GeoLiteCity.dat"
+#define TRG_GEOIP_CITY_ALT_DATABASE "/usr/share/GeoIP/GeoIPCity.dat"

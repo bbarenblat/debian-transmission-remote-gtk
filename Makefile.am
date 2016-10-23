@@ -19,7 +19,8 @@
 
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src po
+DISTCHECK_CONFIGURE_FLAGS = --disable-desktop-database-update
+SUBDIRS = extern src po data
 
 DISTCLEANFILES = \
 	intltool-extract \

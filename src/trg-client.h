@@ -22,10 +22,6 @@
 #ifndef _TRG_CLIENT_H_
 #define _TRG_CLIENT_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <curl/curl.h>
 #include <curl/easy.h>
 
@@ -57,6 +53,9 @@
 #define FAIL_RESPONSE_UNSUCCESSFUL -3
 #define DISPATCH_POOL_SIZE 3
 
+#define HTTP_CLASS_TRANSMISSION 0
+#define HTTP_CLASS_PUBLIC 1
+
 typedef struct {
     int status;
     int size;
@@ -68,9 +67,11 @@ typedef struct {
 typedef struct {
     gint connid;
     JsonNode *node;
-    gchar *str;
+    gchar *body;
+    gchar *url;
     GSourceFunc callback;
     gpointer cb_data;
+    gchar *cookie;
 } trg_request;
 
 typedef struct _TrgClientPrivate TrgClientPrivate;
@@ -109,20 +110,23 @@ typedef struct {
      * We lock updating (and checking for updates) with priv->configMutex
      */
     int serial;
+    guint client_class;
     CURL *curl;
 } trg_tls;
 
 /* stuff that used to be in http.h */
 void trg_response_free(trg_response * response);
-int trg_http_perform(TrgClient * client, gchar * reqstr,
-                     trg_response * reqrsp);
+int trg_http_perform(TrgClient * tc, trg_request *request, trg_response * rsp);
+
 /* end http.h*/
 
 /* stuff that used to be in dispatch.c */
-trg_response *dispatch(TrgClient * client, JsonNode * req);
-trg_response *dispatch_str(TrgClient * client, gchar * req);
+trg_response *dispatch(TrgClient * tc, trg_request *req);
+trg_response *dispatch_public_http(TrgClient *tc, trg_request *req);
 gboolean dispatch_async(TrgClient * client, JsonNode * req,
                         GSourceFunc callback, gpointer data);
+gboolean async_http_request(TrgClient *tc, gchar *url, const gchar *cookie, GSourceFunc callback, gpointer data);
+
 /* end dispatch.c*/
 
 GType trg_client_get_type(void);
@@ -141,6 +145,7 @@ gchar *trg_client_get_session_id(TrgClient * tc);
 void trg_client_set_session_id(TrgClient * tc, gchar * session_id);
 #ifndef CURL_NO_SSL
 gboolean trg_client_get_ssl(TrgClient * tc);
+gboolean trg_client_get_ssl_validate(TrgClient * tc);
 #endif
 gchar *trg_client_get_proxy(TrgClient * tc);
 gint64 trg_client_get_serial(TrgClient * tc);

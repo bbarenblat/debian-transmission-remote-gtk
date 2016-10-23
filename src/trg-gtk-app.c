@@ -17,33 +17,42 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <gtk/gtk.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
-#if GTK_CHECK_VERSION( 3, 0, 0 )
+#include <glib/gi18n.h>
+#include <gtk/gtk.h>
 
 #include "trg-main-window.h"
 #include "trg-gtk-app.h"
 #include "util.h"
 
 enum {
-    PROP_0, PROP_CLIENT, PROP_MINIMISE_ON_START
+	PROP_0,
+	PROP_CLIENT,
+	PROP_MINIMISE_ON_START,
+	N_PROPS,
 };
 
-G_DEFINE_TYPE(TrgGtkApp, trg_gtk_app, GTK_TYPE_APPLICATION)
-#define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), TRG_TYPE_GTK_APP, TrgGtkAppPrivate))
-typedef struct _TrgGtkAppPrivate TrgGtkAppPrivate;
+struct _TrgGtkApp
+{
+	GtkApplication parent;
+};
 
-struct _TrgGtkAppPrivate {
+typedef struct
+{
     TrgClient *client;
     gboolean min_start;
-};
+} TrgGtkAppPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE(TrgGtkApp, trg_gtk_app, GTK_TYPE_APPLICATION)
 
 static void
 trg_gtk_app_get_property(GObject * object, guint property_id,
                          GValue * value, GParamSpec * pspec)
 {
-    TrgGtkAppPrivate *priv = GET_PRIVATE(object);
+    TrgGtkAppPrivate *priv = trg_gtk_app_get_instance_private (TRG_GTK_APP(object));
     switch (property_id) {
     case PROP_CLIENT:
         g_value_set_pointer(value, priv->client);
@@ -61,7 +70,7 @@ static void
 trg_gtk_app_set_property(GObject * object, guint property_id,
                          const GValue * value, GParamSpec * pspec)
 {
-    TrgGtkAppPrivate *priv = GET_PRIVATE(object);
+    TrgGtkAppPrivate *priv = trg_gtk_app_get_instance_private (TRG_GTK_APP(object));
     switch (property_id) {
     case PROP_CLIENT:
         priv->client = g_value_get_pointer(value);
@@ -75,22 +84,12 @@ trg_gtk_app_set_property(GObject * object, guint property_id,
     }
 }
 
-static void trg_gtk_app_dispose(GObject * object)
+static void trg_gtk_app_startup(GApplication * app, gpointer userdata)
 {
-    G_OBJECT_CLASS(trg_gtk_app_parent_class)->dispose(object);
-}
-
-static void trg_gtk_app_finalize(GObject * object)
-{
-    G_OBJECT_CLASS(trg_gtk_app_parent_class)->finalize(object);
-}
-
-static void trg_gtk_app_startup(GtkApplication * app, gpointer data)
-{
-    TrgGtkAppPrivate *priv = GET_PRIVATE(app);
+    TrgGtkAppPrivate *priv = trg_gtk_app_get_instance_private (TRG_GTK_APP(app));
     TrgMainWindow *window =
         trg_main_window_new(priv->client, priv->min_start);
-    gtk_window_set_application(GTK_WINDOW(window), app);
+    gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(app));
 }
 
 static int
@@ -135,7 +134,7 @@ static gboolean
 test_local_cmdline(GApplication * application,
                    gchar *** arguments, gint * exit_status)
 {
-    TrgGtkAppPrivate *priv = GET_PRIVATE(application);
+    TrgGtkAppPrivate *priv = trg_gtk_app_get_instance_private (TRG_GTK_APP(application));
     gchar **argv;
     gchar *cwd = g_get_current_dir();
     gchar *tmp;
@@ -144,7 +143,7 @@ test_local_cmdline(GApplication * application,
     argv = *arguments;
     shift_args(argv, 0);
 
-    i = 1;
+    i = 0;
     while (argv[i]) {
         if (is_minimised_arg(argv[i])) {
             shift_args(argv, i);
@@ -171,44 +170,30 @@ static void trg_gtk_app_class_init(TrgGtkAppClass * klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     GApplicationClass *app_class = G_APPLICATION_CLASS(klass);
 
-    g_type_class_add_private(klass, sizeof(TrgGtkAppPrivate));
-
     object_class->get_property = trg_gtk_app_get_property;
     object_class->set_property = trg_gtk_app_set_property;
-    object_class->dispose = trg_gtk_app_dispose;
-    object_class->finalize = trg_gtk_app_finalize;
     app_class->local_command_line = test_local_cmdline;
+	//app_class->startup = trg_gtk_app_startup;
+    app_class->command_line = trg_gtk_app_command_line;
 
     g_object_class_install_property(object_class,
                                     PROP_CLIENT,
                                     g_param_spec_pointer("trg-client",
                                                          "TClient",
-                                                         "Client",
-                                                         G_PARAM_READWRITE
-                                                         |
-                                                         G_PARAM_CONSTRUCT_ONLY
-                                                         |
-                                                         G_PARAM_STATIC_NAME
-                                                         |
-                                                         G_PARAM_STATIC_NICK
-                                                         |
-                                                         G_PARAM_STATIC_BLURB));
+                                                         _("Client"),
+                                                         G_PARAM_READWRITE|
+                                                         G_PARAM_CONSTRUCT_ONLY|
+                                                         G_PARAM_STATIC_STRINGS));
 
     g_object_class_install_property(object_class,
                                     PROP_MINIMISE_ON_START,
                                     g_param_spec_boolean("min-on-start",
                                                          "Min On Start",
-                                                         "Min On Start",
+                                                         _("Min On Start"),
                                                          FALSE,
-                                                         G_PARAM_READWRITE
-                                                         |
-                                                         G_PARAM_CONSTRUCT_ONLY
-                                                         |
-                                                         G_PARAM_STATIC_NAME
-                                                         |
-                                                         G_PARAM_STATIC_NICK
-                                                         |
-                                                         G_PARAM_STATIC_BLURB));
+                                                         G_PARAM_READWRITE|
+                                                         G_PARAM_CONSTRUCT_ONLY|
+                                                         G_PARAM_STATIC_STRINGS));
 }
 
 static void trg_gtk_app_init(TrgGtkApp * self)
@@ -216,8 +201,8 @@ static void trg_gtk_app_init(TrgGtkApp * self)
     g_application_set_inactivity_timeout(G_APPLICATION(self), 10000);
     g_signal_connect(self, "command-line",
                      G_CALLBACK(trg_gtk_app_command_line), NULL);
-    g_signal_connect(self, "startup", G_CALLBACK(trg_gtk_app_startup),
-                     NULL);
+    g_signal_connect(self, "startup",
+                     G_CALLBACK(trg_gtk_app_startup), NULL);
 }
 
 TrgGtkApp *trg_gtk_app_new(TrgClient * client)
@@ -227,5 +212,3 @@ TrgGtkApp *trg_gtk_app_new(TrgClient * client)
                         "flags", G_APPLICATION_HANDLES_COMMAND_LINE,
                         "trg-client", client, NULL);
 }
-
-#endif

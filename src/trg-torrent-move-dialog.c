@@ -17,6 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -69,14 +73,14 @@ trg_torrent_move_response_cb(GtkDialog * dlg, gint res_id, gpointer data)
         trg_destination_combo_save_selection(TRG_DESTINATION_COMBO
                                              (priv->location_combo));
         dispatch_async(priv->client, request,
-                       on_generic_interactive_action, data);
+                       on_generic_interactive_action_response, data);
     } else {
         json_array_unref(priv->ids);
     }
     gtk_widget_destroy(GTK_WIDGET(dlg));
 }
 
-static void location_changed(GtkWidget * w, gpointer data)
+static void location_changed(GtkComboBox * w, gpointer data)
 {
     TrgTorrentMoveDialogPrivate *priv =
         TRG_TORRENT_MOVE_DIALOG_GET_PRIVATE(data);
@@ -110,8 +114,7 @@ static GObject *trg_torrent_move_dialog_constructor(GType type,
     w = priv->location_combo =
         trg_destination_combo_new(priv->client,
                                   TRG_PREFS_KEY_LAST_MOVE_DESTINATION);
-    g_signal_connect(trg_destination_combo_get_entry
-                     (TRG_DESTINATION_COMBO(w)), "changed",
+    g_signal_connect(w, "changed",
                      G_CALLBACK(location_changed), object);
     hig_workarea_add_row(t, &row, _("Location:"), w, NULL);
 
