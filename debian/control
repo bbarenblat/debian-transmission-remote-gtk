@@ -19,8 +19,8 @@ Build-Depends:
  perl,
 Standards-Version: 3.9.8
 Homepage: https://github.com/transmission-remote-gtk/transmission-remote-gtk
-Vcs-Git: git://benjamin.barenblat.name/debian-transmission-remote-gtk.git
-Vcs-Browser: https://benjamin.barenblat.name/gitweb/?p=debian-transmission-remote-gtk.git
+Vcs-Git: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk.git
+Vcs-Browser: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk/
 
 Package: transmission-remote-gtk
 Architecture: any
