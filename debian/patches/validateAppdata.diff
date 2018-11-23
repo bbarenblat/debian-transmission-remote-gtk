@@ -1,23 +1,23 @@
-Description: Correct style errors in transmission-remote-gtk.appdata.xml
-Author: Benjamin Barenblat <bbaren@debian.org>
+Description: Correct style errors in io.github.TransmissionRemoteGtk.appdata.xml
+Author: Benjamin Barenblat <bbaren@mit.edu>
 Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/37
 Forwarded: no
---- a/data/transmission-remote-gtk.appdata.xml.in
-+++ b/data/transmission-remote-gtk.appdata.xml.in
-@@ -14,14 +14,10 @@
+--- a/data/io.github.TransmissionRemoteGtk.appdata.xml.in
++++ b/data/io.github.TransmissionRemoteGtk.appdata.xml.in
+@@ -13,14 +13,10 @@
    <description>
-     <_p>
+     <p>
      Transmission Remote Gtk allows you to remotely manage the Transmission BitTorrent client using its RPC interface.
 +    It is a full featured client, allowing adding, starting, stopping, removing, verifying, and reannouncing torrents.
 +    It also exposes settings for both individual torrents (peer limits, file priorities, tracker settings, etc.) and Transmission as a whole (global limits, download directory, connectivity preferences, etc.)
 +    It can also act as a .torrent handler, opening when torrents are downloaded through a web browser.
-     </_p>
--    <_p>Features:</_p>
+     </p>
+-    <p>Features:</p>
 -    <ul>
--      <_li>Remotely add (file/url), start, stop, remove, remove and delete, verify, reannounce torrents</_li>
--      <_li>Works as a .torrent handler (eg. from a web browser)</_li>
--      <_li>Set torrent properties such as speed, seed, peer limits, file priorities, add/edit/remove trackers</_li>
--      <_li>Change remote settings like global limits, download directory, and connectivity preferences</_li>
+-      <li>Remotely add (file/url), start, stop, remove, remove and delete, verify, reannounce torrents</li>
+-      <li>Works as a .torrent handler (eg. from a web browser)</li>
+-      <li>Set torrent properties such as speed, seed, peer limits, file priorities, add/edit/remove trackers</li>
+-      <li>Change remote settings like global limits, download directory, and connectivity preferences</li>
 -    </ul>
    </description>
    <screenshots>

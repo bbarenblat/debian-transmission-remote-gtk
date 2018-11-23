@@ -10,7 +10,7 @@ In the interest of defence in depth, however, conditionalize references to
 rss-glib from within the build system.  As an added bonus, this speeds up build
 time by not building code which will never get linked.
 
-Author: Benjamin Barenblat <bbaren@debian.org>
+Author: Benjamin Barenblat <bbaren@mit.edu>
 Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/21
 --- a/Makefile.am
 +++ b/Makefile.am
@@ -18,14 +18,14 @@ Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/2
  ACLOCAL_AMFLAGS = -I m4
  AUTOMAKE_OPTIONS = foreign
  DISTCHECK_CONFIGURE_FLAGS = --disable-desktop-database-update
--SUBDIRS = extern src po data
-+SUBDIRS = src po data
+-SUBDIRS = extern src data po
++SUBDIRS = src data po
 +if HAVE_RSS
 +SUBDIRS += extern
 +endif
  
- DISTCLEANFILES = \
- 	intltool-extract \
+ EXTRA_DIST = config.rpath  README.md
+ 
 --- a/src/Makefile.am
 +++ b/src/Makefile.am
 @@ -143,8 +143,10 @@
