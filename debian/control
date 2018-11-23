@@ -5,8 +5,7 @@ Maintainer: Benjamin Barenblat <bbaren@debian.org>
 Build-Depends:
  appstream-util,
  autoconf-archive,
- debhelper (>= 9.0.0),
- dh-autoreconf,
+ debhelper (>= 10.0.0),
  intltool (>= 0.50.1),
  libcurl4-openssl-dev | libcurl-ssl-dev,
  libgeoip-dev,
