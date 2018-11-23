@@ -3,10 +3,11 @@ Section: net
 Priority: optional
 Maintainer: Benjamin Barenblat <bbaren@debian.org>
 Build-Depends:
- appstream-util,
+ appstream-util (>= 0.7.2),
  autoconf-archive,
  debhelper (>= 10.0.0),
- intltool (>= 0.50.1),
+ gettext (>= 0.19.6),
+ libappstream-glib-dev,
  libcurl4-openssl-dev | libcurl-ssl-dev,
  libgeoip-dev,
  libglib2.0-dev (>= 2.44),
