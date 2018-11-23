@@ -10,7 +10,7 @@ In the interest of defence in depth, however, conditionalize references to
 rss-glib from within the build system.  As an added bonus, this speeds up build
 time by not building code which will never get linked.
 
-Author: Benjamin Barenblat <bbaren@mit.edu>
+Author: Benjamin Barenblat <bbaren@debian.org>
 Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/21
 --- a/Makefile.am
 +++ b/Makefile.am

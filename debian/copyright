@@ -36,7 +36,7 @@ Copyright: 2014 Alan F
 License: CC0-1.0
 
 Files: debian/*
-Copyright: 2013-2018 Benjamin Barenblat <bbaren@mit.edu>
+Copyright: 2013-2018 Benjamin Barenblat <bbaren@debian.org>
 License: Apache-2.0
 
 Files: extern/rss-glib/*.c extern/rss-glib/*.h

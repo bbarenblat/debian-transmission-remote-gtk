@@ -1,7 +1,7 @@
 Source: transmission-remote-gtk
 Section: net
 Priority: optional
-Maintainer: Benjamin Barenblat <bbaren@mit.edu>
+Maintainer: Benjamin Barenblat <bbaren@debian.org>
 Build-Depends:
  appstream-util,
  autoconf-archive,

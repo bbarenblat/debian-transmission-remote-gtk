@@ -1,5 +1,5 @@
 Description: Correct style errors in transmission-remote-gtk.appdata.xml
-Author: Benjamin Barenblat <bbaren@mit.edu>
+Author: Benjamin Barenblat <bbaren@debian.org>
 Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/37
 Forwarded: no
 --- a/data/transmission-remote-gtk.appdata.xml.in
