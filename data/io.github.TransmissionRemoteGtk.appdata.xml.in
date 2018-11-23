@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2014 Alan F -->
+<component type="desktop">
+  <id>io.github.TransmissionRemoteGtk</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0+</project_license>
+  <translation type="gettext">transmission-remote-gtk</translation>
+  <name>Transmission Remote</name>
+  <developer_name>Transmission Remote Gtk Team</developer_name>
+  <summary>Remotely manage the Transmission BitTorrent client</summary>
+  <url type="homepage">https://github.com/transmission-remote-gtk/transmission-remote-gtk</url>
+  <url type="bugtracker">https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues</url>
+  <description>
+    <p>
+    Transmission Remote Gtk allows you to remotely manage the Transmission BitTorrent client using its RPC interface.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Remotely add (file/url), start, stop, remove, remove and delete, verify, reannounce torrents</li>
+      <li>Works as a .torrent handler (eg. from a web browser)</li>
+      <li>Set torrent properties such as speed, seed, peer limits, file priorities, add/edit/remove trackers</li>
+      <li>Change remote settings like global limits, download directory, and connectivity preferences</li>
+    </ul>
+  </description>
+  <screenshots>
+    <screenshot height="576" width="1024" type="default">
+      <image>http://eth0.org.uk/~alan/transmission-remote-gtk-1.1.1.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="1.4.0" date="2018-11-02">
+      <description>
+        <p>This is a minor release with some improvements:</p>
+        <ul>
+          <li>Rename app-id to io.github.TransmissionRemoteGtk</li>
+          <li>Add configuration of alternate speed days to preferences</li>
+          <li>Add menu option to copy magnet links</li>
+          <li>Add Ctrl+q keybinding to quit</li>
+          <li>Fix building with GeoIP support</li>
+          <li>Fix setting speeds in preferences</li>
+          <li>Improve search behavior in file view</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  <launchable type="desktop-id">io.github.TransmissionRemoteGtk.desktop</launchable>
+  <provides>
+    <id>uk.org.eth0.transmission-remote-gtk.desktop</id>
+  </provides>
+  <update_contact>tingping_at_fedoraproject.org</update_contact>
+</component>

@@ -19,7 +19,7 @@ dnl
 
 AC_PREREQ([2.69])
 
-AC_INIT([transmission-remote-gtk], [1.3.1],
+AC_INIT([transmission-remote-gtk], [1.4.0],
         [https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues])
 AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([config.h])
@@ -45,7 +45,8 @@ AC_PATH_PROG([POD2MAN], [pod2man])
 LT_PREREQ([2.2.0])
 LT_INIT
 LT_LIB_M
-IT_PROG_INTLTOOL([0.50.1])
+AM_GNU_GETTEXT_VERSION([0.19.6])
+AM_GNU_GETTEXT([external])
 PKG_PROG_PKG_CONFIG([0.28])
 DESKTOP_FILE
 APPSTREAM_XML
@@ -84,6 +85,7 @@ have_geoip=no
 AS_IF([test x$with_libgeoip != xno], [
 	PKG_CHECK_MODULES([GEOIP], [geoip], [
 		have_geoip="yes"
+		AC_DEFINE(HAVE_GEOIP, 1, [Define if GeoIP is available])
 	], [
 		AC_MSG_WARN([libgeoip not found])
 	])
@@ -138,6 +140,19 @@ AS_IF([test x$with_libappindicator != xno], [
 	])
 ])
 
+AC_ARG_ENABLE([nl_langinfo],
+	AC_HELP_STRING([--disable-nl_langinfo], [disable nl_langinfo (for day names)]),
+	[enable_nl_langinfo=no],
+	[enable_nl_langinfo=yes])
+AS_IF([test x$enable_nl_langinfo != xno], [
+	AC_CHECK_FUNC(nl_langinfo,[
+		enable_nl_langinfo=yes
+		AC_DEFINE(ENABLE_NL_LANGINFO, 1, [Define if nl_langinfo is available])
+		AC_SUBST(ENABLE_NL_LANGINFO)
+	], [
+		AC_MSG_WARN([nl_langinfo not available])
+	])
+])
 
 dnl ---- build flags ----
 AX_APPEND_COMPILE_FLAGS([ \
@@ -200,4 +215,5 @@ echo "
 	libmrss .......: $have_libmrss
 	libproxy ......: $have_libproxy
 	libappindicator: $have_libappindicator
+	nl_langinfo....: $enable_nl_langinfo
 "

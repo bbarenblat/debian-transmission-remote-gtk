@@ -121,16 +121,20 @@ GtkWidget *trg_json_widget_entry_new(GList ** wl, JsonObject * obj,
     return w;
 }
 
-GtkWidget *trg_json_widget_spin_new(GList ** wl, JsonObject * obj,
+GtkWidget *trg_json_widget_spin_int_new(GList ** wl, JsonObject * obj,
                                     const gchar * key,
-                                    GtkWidget * toggleDep, gdouble min,
-                                    gdouble max, gdouble step)
+                                    GtkWidget * toggleDep, gint min,
+                                    gint max, gint step)
 {
-    GtkWidget *w = gtk_spin_button_new_with_range(min, max, step);
-    trg_json_widget_desc *wd = g_new0(trg_json_widget_desc, 1);
-    JsonNode *node = json_object_get_member(obj, key);
+    GtkWidget *w = gtk_spin_button_new_with_range((gdouble)min,
+                                                  (gdouble)max,
+                                                  (gdouble)step);
 
-    wd->saveFunc = trg_json_widget_spin_save_double;
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(w), 0);
+
+    trg_json_widget_desc *wd = g_new0(trg_json_widget_desc, 1);
+
+    wd->saveFunc = trg_json_widget_spin_int_save;
     wd->key = g_strdup(key);
     wd->widget = w;
 
@@ -143,7 +147,36 @@ GtkWidget *trg_json_widget_spin_new(GList ** wl, JsonObject * obj,
     }
 
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(w),
-                              json_node_really_get_double(node));
+                              (double)json_object_get_int_member(obj, key));
+
+    *wl = g_list_append(*wl, wd);
+
+    return w;
+}
+
+GtkWidget *trg_json_widget_spin_double_new(GList ** wl, JsonObject * obj,
+                                    const gchar * key,
+                                    GtkWidget * toggleDep, gdouble min,
+                                    gdouble max, gdouble step)
+{
+    GtkWidget *w = gtk_spin_button_new_with_range(min, max, step);
+
+    trg_json_widget_desc *wd = g_new0(trg_json_widget_desc, 1);
+
+    wd->saveFunc = trg_json_widget_spin_double_save;
+    wd->key = g_strdup(key);
+    wd->widget = w;
+
+    if (toggleDep) {
+        gtk_widget_set_sensitive(w,
+                                 gtk_toggle_button_get_active
+                                 (GTK_TOGGLE_BUTTON(toggleDep)));
+        g_signal_connect(G_OBJECT(toggleDep), "toggled",
+                         G_CALLBACK(toggle_active_arg_is_sensitive), w);
+    }
+
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(w),
+                              json_object_get_double_member(obj, key));
 
     *wl = g_list_append(*wl, wd);
 
@@ -168,7 +201,16 @@ trg_json_widget_entry_save(GtkWidget * widget, JsonObject * obj,
 }
 
 void
-trg_json_widget_spin_save_double(GtkWidget * widget, JsonObject * obj,
+trg_json_widget_spin_int_save(GtkWidget * widget, JsonObject * obj,
+                                 gchar * key)
+{
+    json_object_set_int_member(obj, key,
+                               gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON
+                                                                (widget)));
+}
+
+void
+trg_json_widget_spin_double_save(GtkWidget * widget, JsonObject * obj,
                                  gchar * key)
 {
     json_object_set_double_member(obj, key,

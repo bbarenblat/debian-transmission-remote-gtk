@@ -26,6 +26,9 @@
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
+#ifdef ENABLE_NL_LANGINFO
+#include <langinfo.h>
+#endif
 
 #include "trg-main-window.h"
 #include "trg-remote-prefs-dialog.h"
@@ -180,13 +183,13 @@ trg_rprefs_time_widget_savefunc(GtkWidget * w, JsonObject * obj,
 {
     GtkWidget *hourSpin = g_object_get_data(G_OBJECT(w), "hours-spin");
     GtkWidget *minutesSpin = g_object_get_data(G_OBJECT(w), "mins-spin");
-    gdouble hoursValue =
-        gtk_spin_button_get_value(GTK_SPIN_BUTTON(hourSpin));
-    gdouble minutesValue =
-        gtk_spin_button_get_value(GTK_SPIN_BUTTON(minutesSpin));
+    gint hoursValue =
+        gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(hourSpin));
+    gint minutesValue =
+        gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(minutesSpin));
 
     json_object_set_int_member(obj, key,
-                               (gint64) ((hoursValue * 60.0) +
+                               (gint64) ((hoursValue * 60) +
                                          minutesValue));
 
 }
@@ -279,8 +282,8 @@ static GtkWidget *trg_rprefs_alt_speed_spin_new(GList ** wl,
                                                 GtkWidget * alt_check,
                                                 GtkWidget * alt_time_check)
 {
-    GtkWidget *w = trg_json_widget_spin_new(wl, obj, key,
-                                            NULL, 0, INT_MAX, 5);
+    GtkWidget *w = trg_json_widget_spin_int_new(wl, obj, key,
+                                                NULL, 0, INT_MAX, 5);
     gtk_widget_set_sensitive(w,
                              gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON
                                                           (alt_check))
@@ -294,6 +297,63 @@ static GtkWidget *trg_rprefs_alt_speed_spin_new(GList ** wl,
                      G_CALLBACK(trg_remote_prefs_double_special_dependent),
                      w);
     return w;
+}
+
+static void
+trg_rprefs_alt_days_savefunc(GtkWidget * grid, JsonObject * obj,
+                                gchar * key)
+{
+    guint64 days = 0;
+
+    for(gint i = 0, x = 1; i < 7; i++, x<<=1) {
+        GtkWidget *w = gtk_grid_get_child_at (GTK_GRID(grid), i, 0);
+        if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w)))
+            days += x;
+    }
+
+    json_object_set_int_member(obj, key, days);
+}
+
+static GtkWidget *trg_rprefs_alt_days(GList ** wl,
+                                      JsonObject * Obj,
+                                      const gchar * key,
+                                      GtkWidget *alt_time_check)
+{
+    gchar *abdays_fallback[] = {_("Sun"), _("Mon"), _("Tue"), _("Wed"), _("Thu"), _("Fri"), _("Sat")};
+#ifdef ENABLE_NL_LANGINFO
+    nl_item abdays[] = {ABDAY_1, ABDAY_2, ABDAY_3, ABDAY_4, ABDAY_5, ABDAY_6, ABDAY_7};
+#endif
+    GtkWidget *grid = gtk_grid_new();
+    gtk_grid_set_column_homogeneous (GTK_GRID(grid), TRUE);
+    g_signal_connect(G_OBJECT(alt_time_check), "toggled",
+                     G_CALLBACK(toggle_active_arg_is_sensitive), grid);
+
+    guint64 days = json_object_get_int_member(Obj, key);
+
+    for(gint i = 0, x = 1; i < 7; i++, x<<=1) {
+#ifdef ENABLE_NL_LANGINFO
+        gchar *utf8 = g_convert_with_fallback(nl_langinfo(abdays[i]), -1, "utf-8",
+                                              nl_langinfo(CODESET), NULL, NULL,
+                                              NULL, NULL);
+        GtkWidget *w = gtk_check_button_new_with_label (utf8 ? utf8 : abdays_fallback[i]);
+        g_free(utf8);
+#else
+        GtkWidget *w = gtk_check_button_new_with_label (abdays_fallback[i]);
+#endif
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), (days & x) == x);
+        gtk_grid_attach(GTK_GRID(grid), w, i, 0, 1, 1);
+    }
+
+    gtk_widget_set_sensitive(grid,
+    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(alt_time_check)));
+
+    trg_json_widget_desc *wd = g_new0(trg_json_widget_desc, 1);
+    wd->key = g_strdup(key);
+    wd->widget = grid;
+    wd->saveFunc = trg_rprefs_alt_days_savefunc;
+    *wl = g_list_append(*wl, wd);
+
+    return grid;
 }
 
 static GtkWidget *trg_rprefs_bandwidthPage(TrgRemotePrefsDialog * win,
@@ -311,15 +371,15 @@ static GtkWidget *trg_rprefs_bandwidthPage(TrgRemotePrefsDialog * win,
     tb = trg_json_widget_check_new(&priv->widgets, json,
                                    SGET_SPEED_LIMIT_DOWN_ENABLED,
                                    _("Down Limit (KiB/s)"), NULL);
-    w = trg_json_widget_spin_new(&priv->widgets, json,
-                                 SGET_SPEED_LIMIT_DOWN, tb, 0, INT_MAX, 5);
+    w = trg_json_widget_spin_int_new(&priv->widgets, json,
+                                     SGET_SPEED_LIMIT_DOWN, tb, 0, INT_MAX, 5);
     hig_workarea_add_row_w(t, &row, tb, w, NULL);
 
     tb = trg_json_widget_check_new(&priv->widgets, json,
                                    SGET_SPEED_LIMIT_UP_ENABLED,
                                    _("Up Limit (KiB/s)"), NULL);
-    w = trg_json_widget_spin_new(&priv->widgets, json, SGET_SPEED_LIMIT_UP,
-                                 tb, 0, INT_MAX, 5);
+    w = trg_json_widget_spin_int_new(&priv->widgets, json, SGET_SPEED_LIMIT_UP,
+                                     tb, 0, INT_MAX, 5);
     hig_workarea_add_row_w(t, &row, tb, w, NULL);
 
     hig_workarea_add_section_title(t, &row, _("Alternate limits"));
@@ -337,6 +397,10 @@ static GtkWidget *trg_rprefs_bandwidthPage(TrgRemotePrefsDialog * win,
                                   _("Alternate time range"), NULL);
     w = trg_rprefs_time_begin_end_new(&priv->widgets, json, tb);
     hig_workarea_add_row_w(t, &row, tb, w, NULL);
+
+    w = trg_rprefs_alt_days(&priv->widgets, json,
+                            SGET_ALT_SPEED_TIME_DAY, priv->alt_time_check);
+    hig_workarea_add_row(t, &row, _("Alternate days"), w, NULL);
 
     w = trg_rprefs_alt_speed_spin_new(&priv->widgets, json,
                                       SGET_ALT_SPEED_DOWN, priv->alt_check,
@@ -366,9 +430,9 @@ static GtkWidget *trg_rprefs_limitsPage(TrgRemotePrefsDialog * win,
     tb = trg_json_widget_check_new(&priv->widgets, json,
                                    SGET_SEED_RATIO_LIMITED,
                                    _("Seed ratio limit"), NULL);
-    w = trg_json_widget_spin_new(&priv->widgets, json,
-                                 SGET_SEED_RATIO_LIMIT, tb, 0, INT_MAX,
-                                 0.1);
+    w = trg_json_widget_spin_double_new(&priv->widgets, json,
+                                        SGET_SEED_RATIO_LIMIT, tb,
+                                        0, INT_MAX, 0.1);
     hig_workarea_add_row_w(t, &row, tb, w, NULL);
 
     if (json_object_has_member(json, SGET_DOWNLOAD_QUEUE_ENABLED)) {
@@ -377,39 +441,39 @@ static GtkWidget *trg_rprefs_limitsPage(TrgRemotePrefsDialog * win,
         tb = trg_json_widget_check_new(&priv->widgets, json,
                                        SGET_DOWNLOAD_QUEUE_ENABLED,
                                        _("Download queue size"), NULL);
-        w = trg_json_widget_spin_new(&priv->widgets, json,
-                                     SGET_DOWNLOAD_QUEUE_SIZE, tb, 0,
-                                     INT_MAX, 1);
+        w = trg_json_widget_spin_int_new(&priv->widgets, json,
+                                         SGET_DOWNLOAD_QUEUE_SIZE, tb, 0,
+                                         INT_MAX, 1);
         hig_workarea_add_row_w(t, &row, tb, w, NULL);
 
         tb = trg_json_widget_check_new(&priv->widgets, json,
                                        SGET_SEED_QUEUE_ENABLED,
                                        _("Seed queue size"), NULL);
-        w = trg_json_widget_spin_new(&priv->widgets, json,
-                                     SGET_SEED_QUEUE_SIZE, tb, 0, INT_MAX,
-                                     1);
+        w = trg_json_widget_spin_int_new(&priv->widgets, json,
+                                         SGET_SEED_QUEUE_SIZE, tb, 0,
+                                         INT_MAX, 1);
         hig_workarea_add_row_w(t, &row, tb, w, NULL);
 
         tb = trg_json_widget_check_new(&priv->widgets, json,
                                        SGET_QUEUE_STALLED_ENABLED,
                                        _("Ignore stalled (minutes)"),
                                        NULL);
-        w = trg_json_widget_spin_new(&priv->widgets, json,
-                                     SGET_QUEUE_STALLED_MINUTES, tb, 0,
-                                     INT_MAX, 1);
+        w = trg_json_widget_spin_int_new(&priv->widgets, json,
+                                         SGET_QUEUE_STALLED_MINUTES, tb,
+                                          0, INT_MAX, 1);
         hig_workarea_add_row_w(t, &row, tb, w, NULL);
     }
 
     hig_workarea_add_section_title(t, &row, _("Peers"));
 
-    w = trg_json_widget_spin_new(&priv->widgets, json,
-                                 SGET_PEER_LIMIT_GLOBAL, NULL, 0, INT_MAX,
-                                 5);
+    w = trg_json_widget_spin_int_new(&priv->widgets, json,
+                                     SGET_PEER_LIMIT_GLOBAL, NULL, 0,
+                                     INT_MAX, 5);
     hig_workarea_add_row(t, &row, _("Global peer limit"), w, w);
 
-    w = trg_json_widget_spin_new(&priv->widgets, json,
-                                 SGET_PEER_LIMIT_PER_TORRENT, NULL, 0,
-                                 INT_MAX, 5);
+    w = trg_json_widget_spin_int_new(&priv->widgets, json,
+                                     SGET_PEER_LIMIT_PER_TORRENT, NULL,
+                                     0, INT_MAX, 5);
     hig_workarea_add_row(t, &row, _("Per torrent peer limit"), w, w);
 
     return t;
@@ -519,8 +583,8 @@ static GtkWidget *trg_rprefs_connPage(TrgRemotePrefsDialog * win,
 
     hig_workarea_add_section_title(t, &row, _("Connections"));
 
-    w = trg_json_widget_spin_new(&priv->widgets, s, SGET_PEER_PORT, NULL,
-                                 0, 65535, 1);
+    w = trg_json_widget_spin_int_new(&priv->widgets, s, SGET_PEER_PORT,
+                                     NULL, 0, 65535, 1);
     hig_workarea_add_row(t, &row, _("Peer port"), w, w);
 
     priv->port_test_label = gtk_label_new(_("Port test"));
@@ -627,8 +691,8 @@ static GtkWidget *trg_rprefs_generalPage(TrgRemotePrefsDialog * win,
 
     cache_size_mb = session_get_cache_size_mb(s);
     if (cache_size_mb >= 0) {
-        w = trg_json_widget_spin_new(&priv->widgets, s, SGET_CACHE_SIZE_MB,
-                                     NULL, 0, INT_MAX, 1);
+        w = trg_json_widget_spin_int_new(&priv->widgets, s, SGET_CACHE_SIZE_MB,
+                                         NULL, 0, INT_MAX, 1);
         hig_workarea_add_row(t, &row, _("Cache size (MiB)"), w, w);
     }
 
