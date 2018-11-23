@@ -31,7 +31,7 @@ License: FSF-GPL2
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 
-Files: data/transmission-remote-gtk.appdata.xml.in
+Files: data/io.github.TransmissionRemoteGtk.appdata.xml.in
 Copyright: 2014 Alan F
 License: CC0-1.0
 
