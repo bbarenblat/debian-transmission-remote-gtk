@@ -1,3 +1,9 @@
+transmission-remote-gtk (1.4.1-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Benjamin Barenblat <bbaren@debian.org>  Thu, 03 Jan 2019 20:10:57 -0500
+
 transmission-remote-gtk (1.4.0-1) unstable; urgency=medium
 
   * New upstream release.

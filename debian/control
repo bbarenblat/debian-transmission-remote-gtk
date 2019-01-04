@@ -17,7 +17,7 @@ Build-Depends:
  libproxy-dev,
  libunique-dev,
  perl,
-Standards-Version: 4.2.1
+Standards-Version: 4.3.0
 Homepage: https://github.com/transmission-remote-gtk/transmission-remote-gtk
 Vcs-Git: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk.git
 Vcs-Browser: https://git.benjamin.barenblat.name/debian-transmission-remote-gtk/
