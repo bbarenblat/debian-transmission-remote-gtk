@@ -15,7 +15,6 @@ Build-Depends:
  libjson-glib-dev (>= 0.8),
  libnotify-dev,
  libproxy-dev,
- libunique-dev,
  perl,
 Standards-Version: 4.3.0
 Homepage: https://github.com/transmission-remote-gtk/transmission-remote-gtk
