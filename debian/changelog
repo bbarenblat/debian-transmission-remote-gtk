@@ -1,3 +1,9 @@
+transmission-remote-gtk (1.4.1-2) UNRELEASED; urgency=medium
+
+  * Delete unused build dependency on libunique-dev (closes: #947516).
+
+ -- Benjamin Barenblat <bbaren@debian.org>  Sat, 28 Dec 2019 09:58:22 -0500
+
 transmission-remote-gtk (1.4.1-1) unstable; urgency=medium
 
   * New upstream release.
