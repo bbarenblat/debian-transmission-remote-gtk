@@ -25,12 +25,6 @@ License: GPL-2+
  On Debian systems, the complete text of the GNU General
  Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
 
-Files: COPYING
-Copyright: 1989, 1991 Free Software Foundation, Inc.
-License: FSF-GPL2
- Everyone is permitted to copy and distribute verbatim copies
- of this license document, but changing it is not allowed.
-
 Files: data/io.github.TransmissionRemoteGtk.appdata.xml.in
 Copyright: 2014 Alan F
 License: CC0-1.0
