@@ -1,8 +1,8 @@
-transmission-remote-gtk (1.4.1-3) UNRELEASED; urgency=medium
+transmission-remote-gtk (1.4.1-3) unstable; urgency=medium
 
   * Fix building with GCC 10 (closes: #957883).
 
- -- Benjamin Barenblat <bbaren@debian.org>  Mon, 20 Apr 2020 19:05:06 -0400
+ -- Benjamin Barenblat <bbaren@debian.org>  Mon, 20 Apr 2020 19:12:53 -0400
 
 transmission-remote-gtk (1.4.1-2) unstable; urgency=medium
 
