@@ -5,7 +5,7 @@ Maintainer: Benjamin Barenblat <bbaren@debian.org>
 Build-Depends:
  appstream-util (>= 0.7.2),
  autoconf-archive,
- debhelper (>= 10.0.0),
+ debhelper-compat (= 12),
  gettext (>= 0.19.6),
  libappstream-glib-dev,
  libcurl4-openssl-dev | libcurl-ssl-dev,
