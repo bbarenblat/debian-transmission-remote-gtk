@@ -1,3 +1,4 @@
 avoidRssGlib.diff
 appdataContentRating.diff
 validateAppdata.diff
+fno-common.diff

@@ -1,0 +1,20 @@
+From: David Seifert <soap@gentoo.org>
+Subject: Fix building under GCC 10 / -fno-common
+Origin: upstream, https://github.com/transmission-remote-gtk/transmission-remote-gtk/commit/b20655081332847426a7d10189bb1e2369efea42
+Bug-Debian: https://bugs.debian.org/957883
+Bug-Gentoo: https://bugs.gentoo.org/706980
+Forwarded: https://github.com/transmission-remote-gtk/transmission-remote-gtk/pull/92
+Applied-Upstream: https://github.com/transmission-remote-gtk/transmission-remote-gtk/commit/b20655081332847426a7d10189bb1e2369efea42
+
+Add a `typedef` to avoid defining a variable.
+--- a/src/trg-tree-view.h
++++ b/src/trg-tree-view.h
+@@ -51,7 +51,7 @@ GtkWidget *trg_tree_view_new(void);
+ 
+ G_END_DECLS GList *trg_tree_view_get_selected_refs_list(GtkTreeView * tv);
+ 
+-enum {
++typedef enum {
+     TRG_COLTYPE_ICONTEXT,
+     TRG_COLTYPE_FILEICONTEXT,
+     TRG_COLTYPE_WANTED,
