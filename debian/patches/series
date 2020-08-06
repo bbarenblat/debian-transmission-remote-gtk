@@ -2,3 +2,4 @@ avoidRssGlib.diff
 appdataContentRating.diff
 validateAppdata.diff
 fno-common.diff
+show-torrent-hash.diff
