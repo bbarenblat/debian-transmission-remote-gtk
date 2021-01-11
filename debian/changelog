@@ -1,8 +1,8 @@
-transmission-remote-gtk (1.4.1-5) UNRELEASED; urgency=medium
+transmission-remote-gtk (1.4.1-5) unstable; urgency=medium
 
   * Support latest gettext (closes: #978358).
 
- -- Benjamin Barenblat <bbaren@debian.org>  Mon, 11 Jan 2021 17:35:21 -0500
+ -- Benjamin Barenblat <bbaren@debian.org>  Mon, 11 Jan 2021 18:10:13 -0500
 
 transmission-remote-gtk (1.4.1-4) unstable; urgency=medium
 
