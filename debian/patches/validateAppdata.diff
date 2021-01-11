@@ -1,16 +1,16 @@
-Description: Correct style errors in io.github.TransmissionRemoteGtk.appdata.xml
-Author: Benjamin Barenblat <bbaren@mit.edu>
-Bug: https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues/37
-Forwarded: no
+From: Alan <alan-github@eth0.org.uk>
+Subject: appdata description needs to be 300 chars before <ul> (apparently)
+Origin: upstream, https://github.com/transmission-remote-gtk/transmission-remote-gtk/commit/3c7947f310fb9c943fdd3973f6090926375b6e03
+Applied-Upstream: https://github.com/transmission-remote-gtk/transmission-remote-gtk/commit/3c7947f310fb9c943fdd3973f6090926375b6e03
+
 --- a/data/io.github.TransmissionRemoteGtk.appdata.xml.in
 +++ b/data/io.github.TransmissionRemoteGtk.appdata.xml.in
-@@ -13,14 +13,10 @@
+@@ -13,15 +13,8 @@
+   <url type="bugtracker">https://github.com/transmission-remote-gtk/transmission-remote-gtk/issues</url>
    <description>
      <p>
-     Transmission Remote Gtk allows you to remotely manage the Transmission BitTorrent client using its RPC interface.
-+    It is a full featured client, allowing adding, starting, stopping, removing, verifying, and reannouncing torrents.
-+    It also exposes settings for both individual torrents (peer limits, file priorities, tracker settings, etc.) and Transmission as a whole (global limits, download directory, connectivity preferences, etc.)
-+    It can also act as a .torrent handler, opening when torrents are downloaded through a web browser.
+-    Transmission Remote Gtk allows you to remotely manage the Transmission BitTorrent client using its RPC interface.
++      Transmission Remote Gtk allows you to remotely manage the Transmission BitTorrent client using its RPC interface. You can use it to to manage torrents (start/stop/verify/reannounce/remove/remove and delete), add new ones (it works as a .torrent fle handler from a webbrowser), and configure settings on transmission-daemon.
      </p>
 -    <p>Features:</p>
 -    <ul>
@@ -21,4 +21,4 @@ Forwarded: no
 -    </ul>
    </description>
    <screenshots>
-     <screenshot height="576" width="1024" type="default">
+     <screenshot height="512" width="973" type="default">

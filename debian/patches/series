@@ -1,6 +1,6 @@
 avoidRssGlib.diff
 allow-gettext-0.20.diff
-appdataContentRating.diff
-validateAppdata.diff
 fno-common.diff
 show-torrent-hash.diff
+appdata-screenshot-rating.diff
+validateAppdata.diff
