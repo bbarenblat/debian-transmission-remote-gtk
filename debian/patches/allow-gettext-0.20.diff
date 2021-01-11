@@ -1,0 +1,23 @@
+From: Jan Tojnar <jtojnar@gmail.com>
+Subject: build: Allow building with gettext ≥ 0.20
+Origin: upstream, https://github.com/transmission-remote-gtk/transmission-remote-gtk/commit/0f5cc8a9942e220ea0f7d0b17db4a78d094e3b65
+Bug-Debian: https://bugs.debian.org/978358
+Forwarded: https://github.com/transmission-remote-gtk/transmission-remote-gtk/pull/88
+Applied-Upstream: https://github.com/transmission-remote-gtk/transmission-remote-gtk/commit/0f5cc8a9942e220ea0f7d0b17db4a78d094e3b65
+
+Cargo culted from https://gitlab.freedesktop.org/zeitgeist/zeitgeist/commit/b5c00e80189fd59a059a95c4e276728a2492cb89
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -45,8 +45,10 @@
+ LT_PREREQ([2.2.0])
+ LT_INIT
+ LT_LIB_M
+-AM_GNU_GETTEXT_VERSION([0.19.6])
+ AM_GNU_GETTEXT([external])
++# FIXME: Remove AM_GNU_GETTEXT_VERSION once autoreconf supports REQUIRE_VERSION
++AM_GNU_GETTEXT_VERSION([0.19.6])
++AM_GNU_GETTEXT_REQUIRE_VERSION([0.19.6])
+ PKG_PROG_PKG_CONFIG([0.28])
+ DESKTOP_FILE
+ APPSTREAM_XML
